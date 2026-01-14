@@ -36,7 +36,7 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(self.style.WARNING(f"{obj.key} configuration already exists"))
 
-        keys = ["IS_GOOGLE_ENABLED", "IS_GITHUB_ENABLED", "IS_GITLAB_ENABLED", "IS_GITEA_ENABLED"]
+        keys = ["IS_GOOGLE_ENABLED", "IS_GITHUB_ENABLED", "IS_GITLAB_ENABLED", "IS_GITEA_ENABLED", "IS_MICROSOFT_ENABLED"]
         if not InstanceConfiguration.objects.filter(key__in=keys).exists():
             for key in keys:
                 if key == "IS_GOOGLE_ENABLED":
@@ -138,6 +138,30 @@ class Command(BaseCommand):
                         value = "0"
                     InstanceConfiguration.objects.create(
                         key="IS_GITEA_ENABLED",
+                        value=value,
+                        category="AUTHENTICATION",
+                        is_encrypted=False,
+                    )
+                    self.stdout.write(self.style.SUCCESS(f"{key} loaded with value from environment variable."))
+                if key == "IS_MICROSOFT_ENABLED":
+                    MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET = get_configuration_value(
+                        [
+                            {
+                                "key": "MICROSOFT_CLIENT_ID",
+                                "default": os.environ.get("MICROSOFT_CLIENT_ID", ""),
+                            },
+                            {
+                                "key": "MICROSOFT_CLIENT_SECRET",
+                                "default": os.environ.get("MICROSOFT_CLIENT_SECRET", ""),
+                            },
+                        ]
+                    )
+                    if bool(MICROSOFT_CLIENT_ID) and bool(MICROSOFT_CLIENT_SECRET):
+                        value = "1"
+                    else:
+                        value = "0"
+                    InstanceConfiguration.objects.create(
+                        key="IS_MICROSOFT_ENABLED",
                         value=value,
                         category="AUTHENTICATION",
                         is_encrypted=False,

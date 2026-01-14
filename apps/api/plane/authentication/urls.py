@@ -41,6 +41,7 @@ from .views import (
     GiteaCallbackSpaceEndpoint,
     GiteaOauthInitiateSpaceEndpoint,
 )
+from .views.app.microsoft import MicrosoftOauthInitiateEndpoint, MicrosoftCallbackEndpoint
 
 urlpatterns = [
     # credentials
@@ -146,4 +147,7 @@ urlpatterns = [
         GiteaCallbackSpaceEndpoint.as_view(),
         name="space-gitea-callback",
     ),
+    ## Microsoft Oauth
+    path("microsoft/", MicrosoftOauthInitiateEndpoint.as_view(), name="microsoft-initiate"),
+    path("microsoft/callback/", MicrosoftCallbackEndpoint.as_view(), name="microsoft-callback"),
 ]
