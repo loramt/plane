@@ -1,4 +1,6 @@
 import { useCallback } from "react";
+// plane editor
+import { EDITOR_COLORS_HEX } from "@plane/editor";
 // plane types
 import type { TSearchEntities } from "@plane/types";
 // helpers
@@ -144,6 +146,28 @@ export const useParseEditorContent = (args: TArgs) => {
         if (checked === "checked" || checked === "true") div.classList.add("checked");
         // replace the input element with the div element
         component.replaceWith(div);
+      });
+      // convert data-text-color and data-background-color attributes to inline styles
+      // (react-pdf doesn't support CSS variables, so we need to use hex values)
+      const coloredElements = doc.querySelectorAll("[data-text-color], [data-background-color]");
+      coloredElements.forEach((element) => {
+        const htmlElement = element as HTMLElement;
+        const textColor = element.getAttribute("data-text-color");
+        const backgroundColor = element.getAttribute("data-background-color");
+        // apply text color
+        if (textColor) {
+          const colorHex = EDITOR_COLORS_HEX[textColor]?.text;
+          if (colorHex) {
+            htmlElement.style.color = colorHex;
+          }
+        }
+        // apply background color
+        if (backgroundColor) {
+          const bgColorHex = EDITOR_COLORS_HEX[backgroundColor]?.background;
+          if (bgColorHex) {
+            htmlElement.style.backgroundColor = bgColorHex;
+          }
+        }
       });
       // remove all issue-embed-component elements
       const issueEmbedComponents = doc.querySelectorAll("issue-embed-component");

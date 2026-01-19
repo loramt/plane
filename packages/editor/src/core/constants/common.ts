@@ -180,6 +180,19 @@ export const TOOLBAR_ITEMS: {
   },
 };
 
+// Hex values for PDF export (react-pdf doesn't support CSS variables)
+export const EDITOR_COLORS_HEX: Record<string, { text: string; background: string }> = {
+  gray: { text: "#34322e", background: "#f2efed" },
+  brown: { text: "#51301d", background: "#e7d8d0" },
+  orange: { text: "#90360d", background: "#efd6bc" },
+  yellow: { text: "#8b4e10", background: "#efe5ba" },
+  green: { text: "#1f492a", background: "#d2e0d6" },
+  blue: { text: "#12328b", background: "#cce2f6" },
+  purple: { text: "#4a276f", background: "#e2d4ef" },
+  pink: { text: "#73173f", background: "#edd2e0" },
+  red: { text: "#861a13", background: "#f2d2cc" },
+};
+
 export const COLORS_LIST: {
   key: string;
   label: string;

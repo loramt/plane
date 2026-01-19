@@ -381,6 +381,10 @@ export const EDITOR_PDF_DOCUMENT_STYLESHEET = StyleSheet.create({
     backgroundColor: "#3f76ff33",
     paddingHorizontal: convertRemToPixel(0.375),
   },
+  // colored text spans - prevent background from extending full width
+  "[data-background-color]": {
+    alignSelf: "flex-start",
+  },
   // table
   table: {
     marginTop: convertRemToPixel(0.5),
