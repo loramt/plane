@@ -1,6 +1,6 @@
 import type { NodeViewProps } from "@tiptap/react";
 import { NodeViewContent, NodeViewWrapper } from "@tiptap/react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 // constants
 import { COLORS_LIST } from "@/constants/common";
 // local components
@@ -12,6 +12,9 @@ import { ECalloutAttributeNames } from "./types";
 // utils
 import { updateStoredBackgroundColor } from "./utils";
 
+// Global state to persist picker open state across remounts
+const pickerStateMap = new Map<string, { emoji: boolean; color: boolean }>();
+
 export type CustomCalloutNodeViewProps = NodeViewProps & {
   node: NodeViewProps["node"] & {
     attrs: TCalloutBlockAttributes;
@@ -21,9 +24,32 @@ export type CustomCalloutNodeViewProps = NodeViewProps & {
 
 export function CustomCalloutBlock(props: CustomCalloutNodeViewProps) {
   const { editor, node, updateAttributes } = props;
-  // states
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
+  const nodeId = node.attrs["id"] as string;
+
+  // Initialize state from global map or default to false
+  const initialState = pickerStateMap.get(nodeId) || { emoji: false, color: false };
+  const [isEmojiPickerOpen, setIsEmojiPickerOpenInternal] = useState(initialState.emoji);
+  const [isColorPickerOpen, setIsColorPickerOpenInternal] = useState(initialState.color);
+
+  // Wrapper to update both React state and global map
+  const setIsEmojiPickerOpen = useCallback(
+    (val: boolean) => {
+      const current = pickerStateMap.get(nodeId) || { emoji: false, color: false };
+      pickerStateMap.set(nodeId, { ...current, emoji: val });
+      setIsEmojiPickerOpenInternal(val);
+    },
+    [nodeId]
+  );
+
+  const setIsColorPickerOpen = useCallback(
+    (val: boolean) => {
+      const current = pickerStateMap.get(nodeId) || { emoji: false, color: false };
+      pickerStateMap.set(nodeId, { ...current, color: val });
+      setIsColorPickerOpenInternal(val);
+    },
+    [nodeId]
+  );
+
   // derived values
   const activeBackgroundColor = COLORS_LIST.find((c) => node.attrs["data-background"] === c.key)?.backgroundColor;
 
@@ -35,17 +61,17 @@ export function CustomCalloutBlock(props: CustomCalloutNodeViewProps) {
       }}
     >
       <CalloutBlockLogoSelector
-        key={node.attrs["id"]}
+        key={nodeId}
         blockAttributes={node.attrs}
         disabled={!editor.isEditable}
         isOpen={isEmojiPickerOpen}
-        handleOpen={(val) => setIsEmojiPickerOpen(val)}
+        handleOpen={setIsEmojiPickerOpen}
         updateAttributes={updateAttributes}
       />
       <CalloutBlockColorSelector
         disabled={!editor.isEditable}
         isOpen={isColorPickerOpen}
-        toggleDropdown={() => setIsColorPickerOpen((prev) => !prev)}
+        toggleDropdown={() => setIsColorPickerOpen(!isColorPickerOpen)}
         onSelect={(val) => {
           updateAttributes({
             [ECalloutAttributeNames.BACKGROUND]: val,

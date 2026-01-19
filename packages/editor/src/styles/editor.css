@@ -441,26 +441,29 @@ p.editor-paragraph-block + p.editor-paragraph-block {
 [data-text-color="gray"] {
   color: var(--editor-colors-gray-text);
 }
-[data-text-color="peach"] {
-  color: var(--editor-colors-peach-text);
-}
-[data-text-color="pink"] {
-  color: var(--editor-colors-pink-text);
+[data-text-color="brown"] {
+  color: var(--editor-colors-brown-text);
 }
 [data-text-color="orange"] {
   color: var(--editor-colors-orange-text);
 }
+[data-text-color="yellow"] {
+  color: var(--editor-colors-yellow-text);
+}
 [data-text-color="green"] {
   color: var(--editor-colors-green-text);
 }
-[data-text-color="light-blue"] {
-  color: var(--editor-colors-light-blue-text);
-}
-[data-text-color="dark-blue"] {
-  color: var(--editor-colors-dark-blue-text);
+[data-text-color="blue"] {
+  color: var(--editor-colors-blue-text);
 }
 [data-text-color="purple"] {
   color: var(--editor-colors-purple-text);
+}
+[data-text-color="pink"] {
+  color: var(--editor-colors-pink-text);
+}
+[data-text-color="red"] {
+  color: var(--editor-colors-red-text);
 }
 /* end text colors */
 
@@ -468,26 +471,29 @@ p.editor-paragraph-block + p.editor-paragraph-block {
 [data-background-color="gray"] {
   background-color: var(--editor-colors-gray-background);
 }
-[data-background-color="peach"] {
-  background-color: var(--editor-colors-peach-background);
-}
-[data-background-color="pink"] {
-  background-color: var(--editor-colors-pink-background);
+[data-background-color="brown"] {
+  background-color: var(--editor-colors-brown-background);
 }
 [data-background-color="orange"] {
   background-color: var(--editor-colors-orange-background);
 }
+[data-background-color="yellow"] {
+  background-color: var(--editor-colors-yellow-background);
+}
 [data-background-color="green"] {
   background-color: var(--editor-colors-green-background);
 }
-[data-background-color="light-blue"] {
-  background-color: var(--editor-colors-light-blue-background);
-}
-[data-background-color="dark-blue"] {
-  background-color: var(--editor-colors-dark-blue-background);
+[data-background-color="blue"] {
+  background-color: var(--editor-colors-blue-background);
 }
 [data-background-color="purple"] {
   background-color: var(--editor-colors-purple-background);
+}
+[data-background-color="pink"] {
+  background-color: var(--editor-colors-pink-background);
+}
+[data-background-color="red"] {
+  background-color: var(--editor-colors-red-background);
 }
 /* end background colors */
 

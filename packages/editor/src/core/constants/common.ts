@@ -193,16 +193,10 @@ export const COLORS_LIST: {
     backgroundColor: "var(--editor-colors-gray-background)",
   },
   {
-    key: "peach",
-    label: "Peach",
-    textColor: "var(--editor-colors-peach-text)",
-    backgroundColor: "var(--editor-colors-peach-background)",
-  },
-  {
-    key: "pink",
-    label: "Pink",
-    textColor: "var(--editor-colors-pink-text)",
-    backgroundColor: "var(--editor-colors-pink-background)",
+    key: "brown",
+    label: "Brown",
+    textColor: "var(--editor-colors-brown-text)",
+    backgroundColor: "var(--editor-colors-brown-background)",
   },
   {
     key: "orange",
@@ -211,22 +205,22 @@ export const COLORS_LIST: {
     backgroundColor: "var(--editor-colors-orange-background)",
   },
   {
+    key: "yellow",
+    label: "Yellow",
+    textColor: "var(--editor-colors-yellow-text)",
+    backgroundColor: "var(--editor-colors-yellow-background)",
+  },
+  {
     key: "green",
     label: "Green",
     textColor: "var(--editor-colors-green-text)",
     backgroundColor: "var(--editor-colors-green-background)",
   },
   {
-    key: "light-blue",
-    label: "Light blue",
-    textColor: "var(--editor-colors-light-blue-text)",
-    backgroundColor: "var(--editor-colors-light-blue-background)",
-  },
-  {
-    key: "dark-blue",
-    label: "Dark blue",
-    textColor: "var(--editor-colors-dark-blue-text)",
-    backgroundColor: "var(--editor-colors-dark-blue-background)",
+    key: "blue",
+    label: "Blue",
+    textColor: "var(--editor-colors-blue-text)",
+    backgroundColor: "var(--editor-colors-blue-background)",
   },
   {
     key: "purple",
@@ -234,10 +228,16 @@ export const COLORS_LIST: {
     textColor: "var(--editor-colors-purple-text)",
     backgroundColor: "var(--editor-colors-purple-background)",
   },
-  // {
-  //   key: "pink-blue-gradient",
-  //   label: "Pink blue gradient",
-  //   textColor: "var(--editor-colors-pink-blue-gradient-text)",
-  //   backgroundColor: "var(--editor-colors-pink-blue-gradient-background)",
-  // },
+  {
+    key: "pink",
+    label: "Pink",
+    textColor: "var(--editor-colors-pink-text)",
+    backgroundColor: "var(--editor-colors-pink-background)",
+  },
+  {
+    key: "red",
+    label: "Red",
+    textColor: "var(--editor-colors-red-text)",
+    backgroundColor: "var(--editor-colors-red-background)",
+  },
 ];

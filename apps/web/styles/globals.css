@@ -8,47 +8,51 @@
 /* stickies and editor colors */
 :root {
   /* text colors */
-  --editor-colors-gray-text: #5c5e63;
-  --editor-colors-peach-text: #ff5b59;
-  --editor-colors-pink-text: #f65385;
-  --editor-colors-orange-text: #fd9038;
-  --editor-colors-green-text: #0fc27b;
-  --editor-colors-light-blue-text: #17bee9;
-  --editor-colors-dark-blue-text: #266df0;
-  --editor-colors-purple-text: #9162f9;
+  --editor-colors-gray-text: #34322e;
+  --editor-colors-brown-text: #51301d;
+  --editor-colors-orange-text: #90360d;
+  --editor-colors-yellow-text: #8b4e10;
+  --editor-colors-green-text: #1f492a;
+  --editor-colors-blue-text: #12328b;
+  --editor-colors-purple-text: #4a276f;
+  --editor-colors-pink-text: #73173f;
+  --editor-colors-red-text: #861a13;
   /* end text colors */
 
   /* background colors */
-  --editor-colors-gray-background: #d6d6d8;
-  --editor-colors-peach-background: #ffd5d7;
-  --editor-colors-pink-background: #fdd4e3;
-  --editor-colors-orange-background: #ffe3cd;
-  --editor-colors-green-background: #c3f0de;
-  --editor-colors-light-blue-background: #c5eff9;
-  --editor-colors-dark-blue-background: #c9dafb;
-  --editor-colors-purple-background: #e3d8fd;
+  --editor-colors-gray-background: #f2efed;
+  --editor-colors-brown-background: #e7d8d0;
+  --editor-colors-orange-background: #efd6bc;
+  --editor-colors-yellow-background: #efe5ba;
+  --editor-colors-green-background: #d2e0d6;
+  --editor-colors-blue-background: #cce2f6;
+  --editor-colors-purple-background: #e2d4ef;
+  --editor-colors-pink-background: #edd2e0;
+  --editor-colors-red-background: #f2d2cc;
   /* end background colors */
 }
 /* background colors */
 [data-theme*="light"] {
-  --editor-colors-gray-background: #d6d6d8;
-  --editor-colors-peach-background: #ffd5d7;
-  --editor-colors-pink-background: #fdd4e3;
-  --editor-colors-orange-background: #ffe3cd;
-  --editor-colors-green-background: #c3f0de;
-  --editor-colors-light-blue-background: #c5eff9;
-  --editor-colors-dark-blue-background: #c9dafb;
-  --editor-colors-purple-background: #e3d8fd;
+  --editor-colors-gray-background: #f2efed;
+  --editor-colors-brown-background: #e7d8d0;
+  --editor-colors-orange-background: #efd6bc;
+  --editor-colors-yellow-background: #efe5ba;
+  --editor-colors-green-background: #d2e0d6;
+  --editor-colors-blue-background: #cce2f6;
+  --editor-colors-purple-background: #e2d4ef;
+  --editor-colors-pink-background: #edd2e0;
+  --editor-colors-red-background: #f2d2cc;
 }
 [data-theme*="dark"] {
-  --editor-colors-gray-background: #404144;
-  --editor-colors-peach-background: #593032;
-  --editor-colors-pink-background: #562e3d;
-  --editor-colors-orange-background: #583e2a;
-  --editor-colors-green-background: #1d4a3b;
-  --editor-colors-light-blue-background: #1f495c;
-  --editor-colors-dark-blue-background: #223558;
-  --editor-colors-purple-background: #3d325a;
+  --editor-colors-gray-background: #3d3b39;
+  --editor-colors-brown-background: #4a3d36;
+  --editor-colors-orange-background: #4d3f2f;
+  --editor-colors-yellow-background: #4d4729;
+  --editor-colors-green-background: #2d3d33;
+  --editor-colors-blue-background: #2d3d4d;
+  --editor-colors-purple-background: #3d3549;
+  --editor-colors-pink-background: #4d3540;
+  --editor-colors-red-background: #4d3633;
 }
 /* end background colors */
 

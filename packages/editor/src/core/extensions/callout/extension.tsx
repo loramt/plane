@@ -1,5 +1,5 @@
 import { findParentNodeClosestToPos, ReactNodeViewRenderer } from "@tiptap/react";
-import type { Predicate } from "@tiptap/react";
+import type { NodeViewProps, Predicate } from "@tiptap/react";
 // constants
 import { CORE_EXTENSIONS } from "@/constants/extension";
 // helpers
@@ -10,6 +10,11 @@ import type { CustomCalloutNodeViewProps } from "./block";
 import { CustomCalloutExtensionConfig } from "./extension-config";
 import type { CustomCalloutExtensionOptions, CustomCalloutExtensionStorage } from "./types";
 import { getStoredBackgroundColor, getStoredLogo } from "./utils";
+
+// Wrapper component to avoid inline function in ReactNodeViewRenderer
+function CalloutNodeView(props: NodeViewProps) {
+  return <CustomCalloutBlock {...props} node={props.node as CustomCalloutNodeViewProps["node"]} />;
+}
 
 export const CustomCalloutExtension = CustomCalloutExtensionConfig.extend<
   CustomCalloutExtensionOptions,
@@ -69,8 +74,17 @@ export const CustomCalloutExtension = CustomCalloutExtensionConfig.extend<
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer((props) => (
-      <CustomCalloutBlock {...props} node={props.node as CustomCalloutNodeViewProps["node"]} />
-    ));
+    return ReactNodeViewRenderer(CalloutNodeView, {
+      stopEvent: ({ event }) => {
+        // Prevent mouse/click events from being handled by ProseMirror
+        // This prevents the NodeView from being remounted when clicking on UI elements
+        const target = event.target as HTMLElement;
+        // Check if the event is on the emoji picker or color selector
+        if (target.closest("[contenteditable='false']")) {
+          return true;
+        }
+        return false;
+      },
+    });
   },
 });

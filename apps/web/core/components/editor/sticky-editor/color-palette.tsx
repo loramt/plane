@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import type { TSticky } from "@plane/types";
 
 export const STICKY_COLORS_LIST: {
@@ -11,14 +12,9 @@ export const STICKY_COLORS_LIST: {
     backgroundColor: "var(--editor-colors-gray-background)",
   },
   {
-    key: "peach",
-    label: "Peach",
-    backgroundColor: "var(--editor-colors-peach-background)",
-  },
-  {
-    key: "pink",
-    label: "Pink",
-    backgroundColor: "var(--editor-colors-pink-background)",
+    key: "brown",
+    label: "Brown",
+    backgroundColor: "var(--editor-colors-brown-background)",
   },
   {
     key: "orange",
@@ -26,24 +22,34 @@ export const STICKY_COLORS_LIST: {
     backgroundColor: "var(--editor-colors-orange-background)",
   },
   {
+    key: "yellow",
+    label: "Yellow",
+    backgroundColor: "var(--editor-colors-yellow-background)",
+  },
+  {
     key: "green",
     label: "Green",
     backgroundColor: "var(--editor-colors-green-background)",
   },
   {
-    key: "light-blue",
-    label: "Light blue",
-    backgroundColor: "var(--editor-colors-light-blue-background)",
-  },
-  {
-    key: "dark-blue",
-    label: "Dark blue",
-    backgroundColor: "var(--editor-colors-dark-blue-background)",
+    key: "blue",
+    label: "Blue",
+    backgroundColor: "var(--editor-colors-blue-background)",
   },
   {
     key: "purple",
     label: "Purple",
     backgroundColor: "var(--editor-colors-purple-background)",
+  },
+  {
+    key: "pink",
+    label: "Pink",
+    backgroundColor: "var(--editor-colors-pink-background)",
+  },
+  {
+    key: "red",
+    label: "Red",
+    backgroundColor: "var(--editor-colors-red-background)",
   },
 ];
 
@@ -62,7 +68,7 @@ export function ColorPalette(props: TProps) {
             key={color.key}
             type="button"
             onClick={() => {
-              handleUpdate({
+              void handleUpdate({
                 background_color: color.key,
               });
             }}
