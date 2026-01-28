@@ -89,6 +89,14 @@ class PageDetailSerializer(PageSerializer):
         return html
 
 
+class PageCreateSerializer(serializers.Serializer):
+    """Serializer for creating a new page."""
+
+    name = serializers.CharField(required=True)
+    access = serializers.IntegerField(required=False, default=0)
+    description_html = serializers.CharField(required=False, default="<p></p>")
+
+
 class PageBlockOperationSerializer(serializers.Serializer):
     """Serializer for page block operations (insert, update, delete)."""
 

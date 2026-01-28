@@ -8,7 +8,7 @@ from plane.api.views import (
 urlpatterns = [
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/pages/",
-        PageListAPIEndpoint.as_view(http_method_names=["get"]),
+        PageListAPIEndpoint.as_view(http_method_names=["get", "post"]),
         name="pages",
     ),
     path(

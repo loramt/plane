@@ -3,9 +3,9 @@ from rest_framework import status
 from rest_framework.response import Response
 
 # Module imports
-from plane.db.models import Page
+from plane.db.models import Page, Project, ProjectPage
 from plane.app.permissions import ProjectEntityPermission
-from plane.api.serializers import PageSerializer, PageDetailSerializer, PageBlockOperationSerializer
+from plane.api.serializers import PageSerializer, PageDetailSerializer, PageCreateSerializer, PageBlockOperationSerializer
 from plane.api.utils.page_blocks import (
     insert_block,
     update_block,
@@ -22,7 +22,7 @@ class PageListAPIEndpoint(BaseAPIView):
     serializer_class = PageSerializer
     model = Page
     permission_classes = [ProjectEntityPermission]
-    use_read_replica = True
+    use_read_replica = False
 
     def get_queryset(self):
         return (
@@ -44,6 +44,33 @@ class PageListAPIEndpoint(BaseAPIView):
             request=request,
             queryset=self.get_queryset(),
             on_results=lambda pages: PageSerializer(pages, many=True).data,
+        )
+
+    def post(self, request, slug, project_id):
+        serializer = PageCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        project = Project.objects.get(pk=project_id, workspace__slug=slug)
+
+        page = Page.objects.create(
+            name=data["name"],
+            access=data.get("access", 0),
+            description_html=data.get("description_html", "<p></p>"),
+            owned_by=request.user,
+            workspace_id=project.workspace_id,
+        )
+
+        ProjectPage.objects.create(
+            project=project,
+            page=page,
+            workspace_id=project.workspace_id,
+        )
+
+        return Response(
+            PageSerializer(page).data,
+            status=status.HTTP_201_CREATED,
         )
 
 
