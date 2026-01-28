@@ -123,25 +123,38 @@ def get_block(html: str, block_id: str) -> str:
     return str(target)
 
 
-def list_blocks(html: str) -> list:
+def list_blocks(html: str) -> tuple:
     """
-    List all blocks in the HTML with their data-ids and preview.
+    List all top-level block elements, auto-assigning data-id to any
+    element that lacks one (e.g. after the web editor strips them).
 
     Args:
         html: Current page HTML
 
     Returns:
-        List of dicts with block info: {id, tag, text_preview}
+        Tuple of (blocks list, updated HTML str, bool changed).
+        The caller should persist the HTML when changed is True.
     """
     soup = BeautifulSoup(html, "html.parser")
 
-    blocks = []
-    for elem in soup.find_all(attrs={"data-id": True}):
-        blocks.append({
-            "id": elem.get("data-id"),
-            "tag": elem.name,
-            "class": elem.get("class", []),
-            "text_preview": elem.get_text()[:100].strip()
-        })
+    BLOCK_TAGS = {
+        "p", "h1", "h2", "h3", "h4", "h5", "h6",
+        "ul", "ol", "blockquote", "div", "table",
+        "image-component", "callout-component",
+    }
 
-    return blocks
+    changed = False
+    blocks = []
+    for elem in soup.children:
+        if elem.name and elem.name in BLOCK_TAGS:
+            if not elem.get("data-id"):
+                elem["data-id"] = str(uuid.uuid4())
+                changed = True
+            blocks.append({
+                "id": elem.get("data-id"),
+                "tag": elem.name,
+                "class": elem.get("class", []),
+                "text_preview": elem.get_text()[:100].strip(),
+            })
+
+    return blocks, str(soup), changed

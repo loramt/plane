@@ -172,7 +172,10 @@ class PageDetailAPIEndpoint(BaseAPIView):
                 return Response({"block_html": block_html}, status=status.HTTP_200_OK)
 
             elif operation == PageBlockOperationSerializer.OPERATION_LIST:
-                blocks = list_blocks(html=current_html)
+                blocks, updated_html, changed = list_blocks(html=current_html)
+                if changed:
+                    page.description_html = updated_html
+                    page.save()
                 return Response({"blocks": blocks}, status=status.HTTP_200_OK)
 
         except ValueError as e:
