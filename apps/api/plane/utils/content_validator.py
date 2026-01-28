@@ -71,6 +71,7 @@ CUSTOM_TAGS = {
     "label",
     "input",
     "image-component",
+    "file-component",
 }
 ALLOWED_TAGS = nh3.ALLOWED_TAGS | CUSTOM_TAGS
 
@@ -117,6 +118,14 @@ ATTRIBUTES = {
         "aspectratio",
         "src",
         "alignment",
+        "status",
+    },
+    "file-component": {
+        "id",
+        "src",
+        "filename",
+        "filesize",
+        "filetype",
         "status",
     },
     "img": {

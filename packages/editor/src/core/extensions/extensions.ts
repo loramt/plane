@@ -32,6 +32,7 @@ import { CoreEditorAdditionalExtensions } from "@/plane-editor/extensions";
 // types
 import type { IEditorProps } from "@/types";
 // local imports
+import { CustomFileExtension } from "./custom-file/extension";
 import { CustomImageExtension } from "./custom-image/extension";
 import { EmojiExtension } from "./emoji/extension";
 import { CustomPlaceholderExtension } from "./placeholder";
@@ -145,6 +146,13 @@ export const CoreEditorExtensions = (args: TArguments): Extensions => {
       })
     );
   }
+
+  extensions.push(
+    CustomFileExtension({
+      fileHandler,
+      isEditable: editable,
+    })
+  );
 
   return extensions;
 };

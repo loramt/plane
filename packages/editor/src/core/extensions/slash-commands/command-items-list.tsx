@@ -14,6 +14,7 @@ import {
   ListTodo,
   MessageSquareText,
   MinusSquare,
+  Paperclip,
   Smile,
   Table,
   TextQuote,
@@ -30,6 +31,7 @@ import {
   toggleHeading,
   toggleTextColor,
   toggleBackgroundColor,
+  insertFile,
   insertImage,
   insertCallout,
   setText,
@@ -295,6 +297,18 @@ export const getSlashCommandFilteredSections =
         pushAfter: "code",
       });
     }
+
+    internalAdditionalOptions.push({
+      commandKey: "file",
+      key: "file",
+      title: "File",
+      icon: <Paperclip className="size-3.5" />,
+      description: "Attach a file",
+      searchTerms: ["file", "attachment", "upload", "document", "pdf"],
+      command: ({ editor, range }: CommandProps) => insertFile({ editor, event: "insert", range }),
+      section: "general",
+      pushAfter: "image",
+    });
 
     [
       ...internalAdditionalOptions,

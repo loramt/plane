@@ -22,6 +22,34 @@ from plane.bgtasks.storage_metadata_task import get_asset_object_metadata
 from plane.throttles.asset import AssetRateThrottle
 
 
+IMAGE_ONLY_TYPES = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/jpg",
+    "image/gif",
+]
+
+# Entity types that support generic file attachments (not just images)
+ATTACHMENT_ENTITY_TYPES = {
+    FileAsset.EntityTypeContext.PAGE_DESCRIPTION,
+    FileAsset.EntityTypeContext.ISSUE_DESCRIPTION,
+    FileAsset.EntityTypeContext.ISSUE_ATTACHMENT,
+    FileAsset.EntityTypeContext.COMMENT_DESCRIPTION,
+    FileAsset.EntityTypeContext.DRAFT_ISSUE_DESCRIPTION,
+    FileAsset.EntityTypeContext.DRAFT_ISSUE_ATTACHMENT,
+}
+
+
+def _get_allowed_types(entity_type):
+    """Return allowed MIME types based on entity type.
+    For attachment entity types, accept ALL file types (return None to skip validation).
+    """
+    if entity_type in ATTACHMENT_ENTITY_TYPES:
+        return None  # Accept all file types
+    return IMAGE_ONLY_TYPES
+
+
 class UserAssetsV2Endpoint(BaseAPIView):
     """This endpoint is used to upload user profile images."""
 
@@ -127,7 +155,7 @@ class UserAssetsV2Endpoint(BaseAPIView):
             "image/jpg",
             "image/gif",
         ]
-        if type not in allowed_types:
+        if allowed_types is not None and type not in allowed_types:
             return Response(
                 {
                     "error": "Invalid file type. Only JPEG, PNG, WebP, JPG and GIF files are allowed.",
@@ -322,17 +350,11 @@ class WorkspaceFileAssetEndpoint(BaseAPIView):
             )
 
         # Check if the file type is allowed
-        allowed_types = [
-            "image/jpeg",
-            "image/png",
-            "image/webp",
-            "image/jpg",
-            "image/gif",
-        ]
-        if type not in allowed_types:
+        allowed_types = _get_allowed_types(entity_type)
+        if allowed_types is not None and type not in allowed_types:
             return Response(
                 {
-                    "error": "Invalid file type. Only JPEG, PNG, WebP, JPG and GIF files are allowed.",
+                    "error": "Invalid file type.",
                     "status": False,
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -521,17 +543,11 @@ class ProjectAssetEndpoint(BaseAPIView):
             )
 
         # Check if the file type is allowed
-        allowed_types = [
-            "image/jpeg",
-            "image/png",
-            "image/webp",
-            "image/jpg",
-            "image/gif",
-        ]
-        if type not in allowed_types:
+        allowed_types = _get_allowed_types(entity_type)
+        if allowed_types is not None and type not in allowed_types:
             return Response(
                 {
-                    "error": "Invalid file type. Only JPEG, PNG, WebP, JPG and GIF files are allowed.",
+                    "error": "Invalid file type.",
                     "status": False,
                 },
                 status=status.HTTP_400_BAD_REQUEST,

@@ -33,18 +33,29 @@ class S3Storage(S3Boto3Storage):
         self.signed_url_expiration = int(os.environ.get("SIGNED_URL_EXPIRATION", "3600"))
 
         if os.environ.get("USE_MINIO") == "1":
-            # Determine protocol based on environment variable
-            if os.environ.get("MINIO_ENDPOINT_SSL") == "1":
-                endpoint_protocol = "https"
+            # Determine the endpoint URL for MinIO
+            # In local dev (localhost:port), use the explicit endpoint
+            # In production (Docker internal hostname), use request.get_host() for public URLs
+            is_local_dev = self.aws_s3_endpoint_url and ("localhost" in self.aws_s3_endpoint_url or "127.0.0.1" in self.aws_s3_endpoint_url)
+
+            if is_local_dev or not request:
+                # Local development or no request context - use configured endpoint
+                endpoint_url = self.aws_s3_endpoint_url
             else:
-                endpoint_protocol = request.scheme if request else "http"
+                # Production - use public host from request for browser-accessible URLs
+                if os.environ.get("MINIO_ENDPOINT_SSL") == "1":
+                    endpoint_protocol = "https"
+                else:
+                    endpoint_protocol = request.scheme
+                endpoint_url = f"{endpoint_protocol}://{request.get_host()}"
+
             # Create an S3 client for MinIO
             self.s3_client = boto3.client(
                 "s3",
                 aws_access_key_id=self.aws_access_key_id,
                 aws_secret_access_key=self.aws_secret_access_key,
                 region_name=self.aws_region,
-                endpoint_url=(f"{endpoint_protocol}://{request.get_host()}" if request else self.aws_s3_endpoint_url),
+                endpoint_url=endpoint_url,
                 config=boto3.session.Config(signature_version="s3v4"),
             )
         else:

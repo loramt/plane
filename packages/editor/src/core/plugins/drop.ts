@@ -1,7 +1,7 @@
 import type { Editor } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 // constants
-import { ACCEPTED_ATTACHMENT_MIME_TYPES, ACCEPTED_IMAGE_MIME_TYPES } from "@/constants/config";
+import { ACCEPTED_IMAGE_MIME_TYPES } from "@/constants/config";
 // types
 import type { TEditorCommands, TExtensions } from "@/types";
 
@@ -26,17 +26,14 @@ export const DropHandlerPlugin = (props: Props): Plugin => {
         ) {
           event.preventDefault();
           const files = Array.from(event.clipboardData.files);
-          const acceptedFiles = files.filter(
-            (f) => ACCEPTED_IMAGE_MIME_TYPES.includes(f.type) || ACCEPTED_ATTACHMENT_MIME_TYPES.includes(f.type)
-          );
 
-          if (acceptedFiles.length) {
+          if (files.length) {
             const pos = view.state.selection.from;
-            insertFilesSafely({
+            void insertFilesSafely({
               disabledExtensions,
               flaggedExtensions,
               editor,
-              files: acceptedFiles,
+              files,
               initialPos: pos,
               event: "drop",
             });
@@ -55,11 +52,8 @@ export const DropHandlerPlugin = (props: Props): Plugin => {
         ) {
           event.preventDefault();
           const files = Array.from(event.dataTransfer.files);
-          const acceptedFiles = files.filter(
-            (f) => ACCEPTED_IMAGE_MIME_TYPES.includes(f.type) || ACCEPTED_ATTACHMENT_MIME_TYPES.includes(f.type)
-          );
 
-          if (acceptedFiles.length) {
+          if (files.length) {
             const coordinates = view.posAtCoords({
               left: event.clientX,
               top: event.clientY,
@@ -67,10 +61,10 @@ export const DropHandlerPlugin = (props: Props): Plugin => {
 
             if (coordinates) {
               const pos = coordinates.pos;
-              insertFilesSafely({
+              void insertFilesSafely({
                 disabledExtensions,
                 editor,
-                files: acceptedFiles,
+                files,
                 initialPos: pos,
                 event: "drop",
               });
@@ -94,7 +88,7 @@ type InsertFilesSafelyArgs = {
   type?: Extract<TEditorCommands, "attachment" | "image">;
 };
 
-export const insertFilesSafely = async (args: InsertFilesSafelyArgs) => {
+export const insertFilesSafely = (args: InsertFilesSafelyArgs): void => {
   const { disabledExtensions, editor, event, files, initialPos, type } = args;
   let pos = initialPos;
 
@@ -110,8 +104,9 @@ export const insertFilesSafely = async (args: InsertFilesSafelyArgs) => {
         if (["image", "attachment"].includes(type)) fileType = type;
         else throw new Error("Wrong file type passed");
       } else {
+        // Images go to image component, everything else to file component
         if (ACCEPTED_IMAGE_MIME_TYPES.includes(file.type)) fileType = "image";
-        else if (ACCEPTED_ATTACHMENT_MIME_TYPES.includes(file.type)) fileType = "attachment";
+        else fileType = "attachment";
       }
       // insert file depending on the type at the current position
       if (fileType === "image" && !disabledExtensions?.includes("image")) {
@@ -120,7 +115,13 @@ export const insertFilesSafely = async (args: InsertFilesSafelyArgs) => {
           pos,
           event,
         });
-      } else if (fileType === "attachment") {
+      } else {
+        // All non-image files go to file component
+        editor.commands.insertFileComponent({
+          file,
+          pos,
+          event,
+        });
       }
     } catch (error) {
       console.error(`Error while ${event}ing file:`, error);

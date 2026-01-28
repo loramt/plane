@@ -19,7 +19,8 @@ export const isFileValid = (args: TArgs): boolean => {
     return false;
   }
 
-  if (!acceptedMimeTypes.includes(file.type)) {
+  // Skip MIME type check if acceptedMimeTypes is empty (accept all files)
+  if (acceptedMimeTypes.length > 0 && !acceptedMimeTypes.includes(file.type)) {
     onError(EFileError.INVALID_FILE_TYPE, "Invalid file type.");
     return false;
   }

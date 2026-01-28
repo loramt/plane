@@ -3,6 +3,7 @@ import type { Editor, Range } from "@tiptap/core";
 import { CORE_EXTENSIONS } from "@/constants/extension";
 // extensions
 import { replaceCodeWithText } from "@/extensions/code/utils/replace-code-block-with-text";
+import type { InsertFileComponentProps } from "@/extensions/custom-file/types";
 import type { InsertImageComponentProps } from "@/extensions/custom-image/types";
 // helpers
 import type { ExtendedEmojiStorage } from "@/extensions/emoji/emoji";
@@ -122,6 +123,27 @@ export const insertImage = ({
   if (pos) imageOptions.pos = pos;
   if (file) imageOptions.file = file;
   return editor?.chain().focus().insertImageComponent(imageOptions).run();
+};
+
+export const insertFile = ({
+  editor,
+  event,
+  pos,
+  file,
+  range,
+}: {
+  editor: Editor;
+  event: "insert" | "drop";
+  pos?: number | null;
+  file?: File;
+  range?: Range;
+}) => {
+  if (range) editor.chain().focus().deleteRange(range).run();
+
+  const fileOptions: InsertFileComponentProps = { event };
+  if (pos) fileOptions.pos = pos;
+  if (file) fileOptions.file = file;
+  return editor?.chain().focus().insertFileComponent(fileOptions).run();
 };
 
 export const unsetLinkEditor = (editor: Editor) => {

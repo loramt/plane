@@ -7,6 +7,7 @@ export enum CORE_EXTENSIONS {
   CODE_BLOCK = "codeBlock",
   CODE_INLINE = "code",
   CUSTOM_COLOR = "customColor",
+  CUSTOM_FILE = "fileComponent",
   CUSTOM_IMAGE = "imageComponent",
   CUSTOM_LINK = "link",
   DOCUMENT = "doc",
@@ -67,5 +68,6 @@ export const BLOCK_NODE_TYPES = [
   CORE_EXTENSIONS.IMAGE,
   CORE_EXTENSIONS.CUSTOM_IMAGE,
   CORE_EXTENSIONS.CALLOUT,
+  CORE_EXTENSIONS.CUSTOM_FILE,
   CORE_EXTENSIONS.WORK_ITEM_EMBED,
 ];
