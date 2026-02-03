@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { observer } from "mobx-react";
-import { FileText, Users } from "lucide-react";
 // plane imports
-import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
+import { useCan } from "@plane/permissions";
 // components
 import { NotAuthorizedView } from "@/components/auth-screens/not-authorized-view";
 import { PageHead } from "@/components/core/page-title";
@@ -13,19 +12,15 @@ import { SettingsContentWrapper } from "@/components/settings/content-wrapper";
 import { SettingsHeading } from "@/components/settings/heading";
 // plane-web components
 import { IAMPoliciesList } from "@/plane-web/components/workspace/settings/iam/policies-list";
-import { IAMUserPolicies } from "@/plane-web/components/workspace/settings/iam/user-policies";
 import { PolicyModal } from "@/plane-web/components/workspace/settings/iam/policy-modal";
 // hooks
 import { useWorkspace } from "@/hooks/store/use-workspace";
-import { useUserPermissions } from "@/hooks/store/user";
+import { useIAM } from "@/hooks/store/use-iam";
 // types
 import type { Route } from "./+types/page";
 
-type TabType = "policies" | "users";
-
 const IAMSettingsPage = observer(function IAMSettingsPage({ params }: Route.ComponentProps) {
   // states
-  const [activeTab, setActiveTab] = useState<TabType>("policies");
   const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
   const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null);
 
@@ -36,14 +31,26 @@ const IAMSettingsPage = observer(function IAMSettingsPage({ params }: Route.Comp
   const { t } = useTranslation();
 
   // store hooks
-  const { workspaceUserInfo, allowPermissions } = useUserPermissions();
   const { currentWorkspace } = useWorkspace();
+  const { myPolicies, actor, isOwner, fetchMyPolicies, isLoading } = useIAM();
 
-  // derived values
-  const canPerformWorkspaceAdminActions = allowPermissions(
-    [EUserPermissions.ADMIN],
-    EUserPermissionsLevel.WORKSPACE
-  );
+  // Fetch IAM policies on mount
+  useEffect(() => {
+    if (workspaceSlug) {
+      fetchMyPolicies(workspaceSlug);
+    }
+  }, [workspaceSlug]);
+
+  // IAM permission check
+  const { can } = useCan({
+    actor,
+    policies: myPolicies,
+    workspaceSlug,
+    isOwner,
+  });
+
+  // Check if user can manage IAM (owner always can)
+  const canManageIAM = can("iam:manage");
 
   const pageTitle = currentWorkspace?.name
     ? `${currentWorkspace.name} - ${t("workspace_settings.settings.iam.title")}`
@@ -65,13 +72,24 @@ const IAMSettingsPage = observer(function IAMSettingsPage({ params }: Route.Comp
     setEditingPolicyId(null);
   };
 
+  // Show loading while fetching policies
+  if (isLoading) {
+    return (
+      <SettingsContentWrapper size="lg">
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </SettingsContentWrapper>
+    );
+  }
+
   // if user is not authorized to view this page
-  if (workspaceUserInfo && !canPerformWorkspaceAdminActions) {
+  if (!canManageIAM) {
     return <NotAuthorizedView section="settings" className="h-auto" />;
   }
 
   return (
-    <SettingsContentWrapper>
+    <SettingsContentWrapper size="lg">
       <PageHead title={pageTitle} />
 
       <PolicyModal
@@ -85,54 +103,19 @@ const IAMSettingsPage = observer(function IAMSettingsPage({ params }: Route.Comp
         <SettingsHeading
           title={t("workspace_settings.settings.iam.heading")}
           description={t("workspace_settings.settings.iam.description")}
-          button={
-            activeTab === "policies"
-              ? {
-                  label: t("workspace_settings.settings.iam.add_policy"),
-                  onClick: handleCreatePolicy,
-                }
-              : undefined
-          }
-          showButton={activeTab === "policies"}
+          button={{
+            label: t("workspace_settings.settings.iam.add_policy"),
+            onClick: handleCreatePolicy,
+          }}
         />
 
-        {/* Tabs */}
-        <div className="flex gap-1 border-b border-subtle mt-4">
-          <button
-            onClick={() => setActiveTab("policies")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 transition-colors ${
-              activeTab === "policies"
-                ? "border-primary text-primary font-medium"
-                : "border-transparent text-tertiary hover:text-primary"
-            }`}
-          >
-            <FileText className="h-4 w-4" />
-            {t("workspace_settings.settings.iam.tabs.policies")}
-          </button>
-          <button
-            onClick={() => setActiveTab("users")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 transition-colors ${
-              activeTab === "users"
-                ? "border-primary text-primary font-medium"
-                : "border-transparent text-tertiary hover:text-primary"
-            }`}
-          >
-            <Users className="h-4 w-4" />
-            {t("workspace_settings.settings.iam.tabs.users")}
-          </button>
-        </div>
-
-        {/* Content */}
+        {/* Policies List */}
         <div className="mt-4">
-          {activeTab === "policies" ? (
-            <IAMPoliciesList
-              workspaceSlug={workspaceSlug}
-              onEditPolicy={handleEditPolicy}
-              onCreatePolicy={handleCreatePolicy}
-            />
-          ) : (
-            <IAMUserPolicies workspaceSlug={workspaceSlug} />
-          )}
+          <IAMPoliciesList
+            workspaceSlug={workspaceSlug}
+            onEditPolicy={handleEditPolicy}
+            onCreatePolicy={handleCreatePolicy}
+          />
         </div>
       </div>
     </SettingsContentWrapper>

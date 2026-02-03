@@ -420,9 +420,11 @@ class MyPoliciesEndpoint(BaseAPIView):
     """
     Returns all policies applicable to the current user.
     This is the main endpoint for frontend to fetch policies.
+
+    NOTE: No IAM permission check here - any authenticated user can
+    fetch their own policies. This is required for the IAM system to work.
     """
 
-    @iam_permission(action="policy:read")
     def get(self, request, slug):
         """Get all policies for the current user in this workspace."""
         workspace = Workspace.objects.filter(
@@ -472,6 +474,9 @@ class MyPoliciesEndpoint(BaseAPIView):
             GroupLiteSerializer,
         )
 
+        # Check if user is the workspace owner (root account)
+        is_owner = workspace.owner_id == user.id
+
         response_data = {
             "policies": PolicySerializer(policies, many=True).data,
             "groups": GroupLiteSerializer(user_groups, many=True).data,
@@ -480,6 +485,7 @@ class MyPoliciesEndpoint(BaseAPIView):
                 "email": user.email,
                 "groups": list(user_groups.values_list("name", flat=True)),
             },
+            "is_owner": is_owner,
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -573,3 +579,177 @@ class ProjectGroupViewSet(BaseViewSet):
 
         group.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ============================================================================
+# Member Policies Endpoint
+# ============================================================================
+
+class MemberPoliciesEndpoint(BaseAPIView):
+    """
+    Endpoint to get and update policies for a specific workspace member.
+    GET: Returns all policies assigned to the member
+    PUT: Updates the member's policies (replaces all)
+    """
+
+    @iam_permission(action="member:read")
+    def get(self, request, slug, member_id):
+        """Get all policies for a specific member."""
+        workspace = Workspace.objects.filter(
+            slug=slug,
+            deleted_at__isnull=True
+        ).first()
+
+        if not workspace:
+            return Response(
+                {"error": "Workspace not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Get user's groups
+        user_groups = Group.objects.filter(
+            members__member_id=member_id,
+            members__deleted_at__isnull=True,
+            workspace=workspace,
+            deleted_at__isnull=True,
+        )
+
+        # Get policies from groups
+        group_policy_ids = GroupPolicy.objects.filter(
+            group__in=user_groups,
+            deleted_at__isnull=True,
+        ).values_list("policy_id", flat=True)
+
+        # Get direct user policies
+        user_policies = UserPolicy.objects.filter(
+            user_id=member_id,
+            workspace=workspace,
+            deleted_at__isnull=True,
+        )
+        user_policy_ids = user_policies.values_list("policy_id", flat=True)
+
+        # Combine and fetch policies
+        all_policy_ids = set(group_policy_ids) | set(user_policy_ids)
+        policies = Policy.objects.filter(
+            id__in=all_policy_ids,
+            deleted_at__isnull=True,
+        )
+
+        return Response({
+            "policies": PolicySerializer(policies, many=True).data,
+            "direct_policy_ids": list(user_policy_ids),
+        }, status=status.HTTP_200_OK)
+
+    @iam_permission(action="member:update")
+    def put(self, request, slug, member_id):
+        """Update policies for a specific member (replaces direct policies)."""
+        workspace = Workspace.objects.filter(
+            slug=slug,
+            deleted_at__isnull=True
+        ).first()
+
+        if not workspace:
+            return Response(
+                {"error": "Workspace not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        policy_ids = request.data.get("policy_ids", [])
+
+        # Validate policies exist
+        valid_policies = Policy.objects.filter(
+            id__in=policy_ids,
+            workspace=workspace,
+            deleted_at__isnull=True
+        )
+        valid_policy_ids = set(str(p.id) for p in valid_policies)
+
+        # Get current user policies
+        current_user_policies = UserPolicy.objects.filter(
+            user_id=member_id,
+            workspace=workspace,
+            deleted_at__isnull=True,
+        )
+        current_policy_ids = set(str(up.policy_id) for up in current_user_policies)
+
+        # Determine policies to add and remove
+        policies_to_add = valid_policy_ids - current_policy_ids
+        policies_to_remove = current_policy_ids - valid_policy_ids
+
+        # Remove policies
+        if policies_to_remove:
+            UserPolicy.objects.filter(
+                user_id=member_id,
+                workspace=workspace,
+                policy_id__in=policies_to_remove,
+                deleted_at__isnull=True,
+            ).delete()
+
+        # Add new policies
+        for policy_id in policies_to_add:
+            UserPolicy.objects.get_or_create(
+                user_id=member_id,
+                policy_id=policy_id,
+                workspace=workspace,
+                defaults={"created_by": request.user}
+            )
+
+        # Invalidate cache
+        invalidate_user_policies_cache(member_id, slug)
+
+        # Return updated policies
+        user_policy_ids = UserPolicy.objects.filter(
+            user_id=member_id,
+            workspace=workspace,
+            deleted_at__isnull=True,
+        ).values_list("policy_id", flat=True)
+
+        policies = Policy.objects.filter(
+            id__in=user_policy_ids,
+            deleted_at__isnull=True,
+        )
+
+        return Response({
+            "policies": PolicySerializer(policies, many=True).data,
+            "direct_policy_ids": list(user_policy_ids),
+        }, status=status.HTTP_200_OK)
+
+
+# ============================================================================
+# Policies for Invitation
+# ============================================================================
+
+class PoliciesForInvitationEndpoint(BaseAPIView):
+    """
+    Returns all policies available for assigning to new users during invitation.
+    Ensures the Administrator policy exists.
+    """
+
+    def get(self, request, slug):
+        """Get all policies for invitation, ensuring Administrator exists."""
+        from plane.app.permissions.iam.managed_policies import ensure_administrator_policy
+
+        workspace = Workspace.objects.filter(
+            slug=slug,
+            deleted_at__isnull=True
+        ).first()
+
+        if not workspace:
+            return Response(
+                {"error": "Workspace not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Ensure Administrator policy exists
+        ensure_administrator_policy(workspace)
+
+        # Get all policies for the workspace
+        policies = Policy.objects.filter(
+            workspace=workspace,
+            deleted_at__isnull=True,
+        ).order_by("-is_managed", "name")
+
+        return Response(
+            PolicySerializer(policies, many=True).data,
+            status=status.HTTP_200_OK
+        )

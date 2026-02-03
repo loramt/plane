@@ -12,7 +12,6 @@ import { cn } from "@plane/utils";
 import { NotAuthorizedView } from "@/components/auth-screens/not-authorized-view";
 import { CountChip } from "@/components/common/count-chip";
 import { PageHead } from "@/components/core/page-title";
-import { MemberListFiltersDropdown } from "@/components/project/dropdowns/filters/member-list";
 import { SettingsContentWrapper } from "@/components/settings/content-wrapper";
 import { WorkspaceMembersList } from "@/components/workspace/settings/members-list";
 // hooks
@@ -20,7 +19,6 @@ import { useMember } from "@/hooks/store/use-member";
 import { useWorkspace } from "@/hooks/store/use-workspace";
 import { useUserPermissions } from "@/hooks/store/user";
 // plane web components
-import { BillingActionsButton } from "@/plane-web/components/workspace/billing/billing-actions-button";
 import { SendWorkspaceInvitationModal, MembersActivityButton } from "@/plane-web/components/workspace/members";
 import type { Route } from "./+types/page";
 
@@ -33,7 +31,7 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
   // store hooks
   const { workspaceUserInfo, allowPermissions } = useUserPermissions();
   const {
-    workspace: { workspaceMemberIds, inviteMembersToWorkspace, filtersStore },
+    workspace: { workspaceMemberIds, inviteMembersToWorkspace },
   } = useMember();
   const { currentWorkspace } = useWorkspace();
   const { t } = useTranslation();
@@ -72,20 +70,8 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
     }
   };
 
-  // Handler for role filter updates
-  const handleRoleFilterUpdate = (role: string) => {
-    const currentFilters = filtersStore.filters;
-    const currentRoles = currentFilters?.roles || [];
-    const updatedRoles = currentRoles.includes(role) ? currentRoles.filter((r) => r !== role) : [...currentRoles, role];
-
-    filtersStore.updateFilters({
-      roles: updatedRoles.length > 0 ? updatedRoles : undefined,
-    });
-  };
-
   // derived values
   const pageTitle = currentWorkspace?.name ? `${currentWorkspace.name} - Members` : undefined;
-  const appliedRoleFilters = filtersStore.filters?.roles || [];
 
   // if user is not authorized to view this page
   if (workspaceUserInfo && !canPerformWorkspaceMemberActions) {
@@ -124,18 +110,12 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <MemberListFiltersDropdown
-              appliedFilters={appliedRoleFilters}
-              handleUpdate={handleRoleFilterUpdate}
-              memberType="workspace"
-            />
-            <MembersActivityButton workspaceSlug={workspaceSlug} />
+<MembersActivityButton workspaceSlug={workspaceSlug} />
             {canPerformWorkspaceAdminActions && (
               <Button variant="primary" size="lg" onClick={() => setInviteModal(true)}>
                 {t("workspace_settings.settings.members.add_member")}
               </Button>
             )}
-            <BillingActionsButton canPerformWorkspaceAdminActions={canPerformWorkspaceAdminActions} />
           </div>
         </div>
         <WorkspaceMembersList searchQuery={searchQuery} isAdmin={canPerformWorkspaceAdminActions} />

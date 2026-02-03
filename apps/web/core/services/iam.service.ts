@@ -32,6 +32,47 @@ export class IAMService extends APIService {
   }
 
   // ============================================================================
+  // Policies for Invitation
+  // ============================================================================
+
+  async fetchPoliciesForInvitation(workspaceSlug: string): Promise<IPolicy[]> {
+    return this.get(`/api/workspaces/${workspaceSlug}/policies-for-invitation/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  // ============================================================================
+  // Member Policies
+  // ============================================================================
+
+  async fetchMemberPolicies(
+    workspaceSlug: string,
+    memberId: string
+  ): Promise<{ policies: IPolicy[]; direct_policy_ids: string[] }> {
+    return this.get(`/api/workspaces/${workspaceSlug}/members/${memberId}/policies/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async updateMemberPolicies(
+    workspaceSlug: string,
+    memberId: string,
+    policyIds: string[]
+  ): Promise<{ policies: IPolicy[]; direct_policy_ids: string[] }> {
+    return this.put(`/api/workspaces/${workspaceSlug}/members/${memberId}/policies/`, {
+      policy_ids: policyIds,
+    })
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  // ============================================================================
   // Groups
   // ============================================================================
 

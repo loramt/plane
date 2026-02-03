@@ -1,18 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { EUserPermissions, EUserPermissionsLevel, LOGIN_MEDIUM_LABELS } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
+import type { IPolicy } from "@plane/permissions";
 import { renderFormattedDate } from "@plane/utils";
 import { MemberHeaderColumn } from "@/components/project/member-header-column";
 import type { RowData } from "@/components/workspace/settings/member-columns";
-import { AccountTypeColumn, NameColumn } from "@/components/workspace/settings/member-columns";
+import { PoliciesColumn, NameColumn } from "@/components/workspace/settings/member-columns";
 import { useMember } from "@/hooks/store/use-member";
+import { useWorkspace } from "@/hooks/store/use-workspace";
 import { useUser, useUserPermissions } from "@/hooks/store/user";
+import { IAMService } from "@/services/iam.service";
 import type { IMemberFilters } from "@/store/member/utils";
+
+const iamService = new IAMService();
 
 export const useMemberColumns = () => {
   // states
   const [removeMemberModal, setRemoveMemberModal] = useState<RowData | null>(null);
+  const [availablePolicies, setAvailablePolicies] = useState<IPolicy[]>([]);
 
   const { workspaceSlug } = useParams();
 
@@ -23,7 +29,27 @@ export const useMemberColumns = () => {
       filtersStore: { filters, updateFilters },
     },
   } = useMember();
+  const { currentWorkspace } = useWorkspace();
   const { t } = useTranslation();
+
+  // Get workspace owner ID - owner might be a string (UUID) or an IUser object depending on the API
+  const workspaceOwnerId = typeof currentWorkspace?.owner === 'string'
+    ? currentWorkspace.owner
+    : currentWorkspace?.owner?.id;
+
+  // Fetch available policies on mount
+  useEffect(() => {
+    const fetchPolicies = async () => {
+      if (!workspaceSlug) return;
+      try {
+        const policies = await iamService.fetchPoliciesForInvitation(workspaceSlug.toString());
+        setAvailablePolicies(policies);
+      } catch (error) {
+        console.error("Failed to fetch policies:", error);
+      }
+    };
+    fetchPolicies();
+  }, [workspaceSlug]);
 
   // derived values
   const isAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE);
@@ -89,16 +115,16 @@ export const useMemberColumns = () => {
     },
 
     {
-      key: "Account type",
-      content: t("workspace_settings.settings.members.details.account_type"),
-      thRender: () => (
-        <MemberHeaderColumn
-          property="role"
-          displayFilters={filters}
-          handleDisplayFilterUpdate={handleDisplayFilterUpdate}
+      key: "Policies",
+      content: t("workspace_settings.settings.members.details.policies"),
+      tdRender: (rowData: RowData) => (
+        <PoliciesColumn
+          rowData={rowData}
+          workspaceSlug={workspaceSlug?.toString() ?? ""}
+          availablePolicies={availablePolicies}
+          workspaceOwnerId={workspaceOwnerId}
         />
       ),
-      tdRender: (rowData: RowData) => <AccountTypeColumn rowData={rowData} workspaceSlug={workspaceSlug} />,
     },
 
     {

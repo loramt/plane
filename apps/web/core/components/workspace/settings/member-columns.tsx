@@ -1,21 +1,25 @@
+import { useState, useEffect, useRef } from "react";
 import { observer } from "mobx-react";
 import Link from "next/link";
-import { Controller, useForm } from "react-hook-form";
 
 import { Disclosure } from "@headlessui/react";
 // plane imports
-import { ROLE, EUserPermissions, EUserPermissionsLevel, MEMBER_TRACKER_ELEMENTS } from "@plane/constants";
-import { TrashIcon, SuspendedUserIcon } from "@plane/propel/icons";
+import { EUserPermissions, EUserPermissionsLevel, MEMBER_TRACKER_ELEMENTS } from "@plane/constants";
+import { TrashIcon, SuspendedUserIcon, ChevronDownIcon, CheckIcon } from "@plane/propel/icons";
 import { Pill, EPillVariant, EPillSize } from "@plane/propel/pill";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { IUser, IWorkspaceMember } from "@plane/types";
+import type { IPolicy } from "@plane/permissions";
 // plane ui
-import { CustomSelect, PopoverMenu } from "@plane/ui";
+import { PopoverMenu } from "@plane/ui";
 // helpers
 import { getFileURL } from "@plane/utils";
 // hooks
-import { useMember } from "@/hooks/store/use-member";
 import { useUser, useUserPermissions } from "@/hooks/store/user";
+// services
+import { IAMService } from "@/services/iam.service";
+
+const iamService = new IAMService();
 
 export interface RowData {
   member: IWorkspaceMember;
@@ -31,9 +35,11 @@ type NameProps = {
   setRemoveMemberModal: (rowData: RowData) => void;
 };
 
-type AccountTypeProps = {
+type PoliciesProps = {
   rowData: RowData;
   workspaceSlug: string;
+  availablePolicies: IPolicy[];
+  workspaceOwnerId?: string;
 };
 
 export function NameColumn(props: NameProps) {
@@ -106,82 +112,158 @@ export function NameColumn(props: NameProps) {
   );
 }
 
-export const AccountTypeColumn = observer(function AccountTypeColumn(props: AccountTypeProps) {
-  const { rowData, workspaceSlug } = props;
-  // form info
-  const {
-    control,
-    formState: { errors },
-  } = useForm();
+export const PoliciesColumn = observer(function PoliciesColumn(props: PoliciesProps) {
+  const { rowData, workspaceSlug, availablePolicies, workspaceOwnerId } = props;
+  // states
+  const [isOpen, setIsOpen] = useState(false);
+  const [memberPolicyIds, setMemberPolicyIds] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   // store hooks
   const { allowPermissions } = useUserPermissions();
-
-  const {
-    workspace: { updateMember },
-  } = useMember();
   const { data: currentUser } = useUser();
 
   // derived values
-  const isCurrentUser = currentUser?.id === rowData.member.id;
+  const memberId = rowData.member.id;
+  const isCurrentUser = currentUser?.id === memberId;
+  const isOwner = workspaceOwnerId === memberId;
   const isAdminRole = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE);
-  const isRoleNonEditable = isCurrentUser || !isAdminRole;
+  const canEdit = isAdminRole && !isCurrentUser && !isOwner;
   const isSuspended = rowData.is_active === false;
 
-  return (
-    <>
-      {isSuspended ? (
-        <div className="w-32 flex ">
-          <Pill variant={EPillVariant.DEFAULT} size={EPillSize.SM} className="border-none">
-            Suspended
-          </Pill>
-        </div>
-      ) : isRoleNonEditable ? (
-        <div className="w-32 flex ">
-          <span>{ROLE[rowData.role]}</span>
-        </div>
-      ) : (
-        <Controller
-          name="role"
-          control={control}
-          rules={{ required: "Role is required." }}
-          render={({ field: { value } }) => (
-            <CustomSelect
-              value={value as EUserPermissions}
-              onChange={async (value: EUserPermissions) => {
-                if (!workspaceSlug) return;
-                try {
-                  await updateMember(workspaceSlug.toString(), rowData.member.id, {
-                    role: value as unknown as EUserPermissions,
-                  });
-                } catch (err: unknown) {
-                  const error = err as { error?: string | string[] };
-                  const errorString = Array.isArray(error?.error) ? error.error[0] : error?.error;
+  // Fetch member policies on mount
+  useEffect(() => {
+    const fetchPolicies = async () => {
+      if (!workspaceSlug || !memberId) return;
+      try {
+        setIsLoading(true);
+        const response = await iamService.fetchMemberPolicies(workspaceSlug.toString(), memberId);
+        setMemberPolicyIds(response.direct_policy_ids.map(String));
+      } catch (error) {
+        console.error("Failed to fetch member policies:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPolicies();
+  }, [workspaceSlug, memberId]);
 
-                  setToast({
-                    type: TOAST_TYPE.ERROR,
-                    title: "Error!",
-                    message: errorString ?? "An error occurred while updating member role. Please try again.",
-                  });
-                }
-              }}
-              label={
-                <div className="flex ">
-                  <span>{ROLE[rowData.role]}</span>
-                </div>
-              }
-              buttonClassName={`!px-0 !justify-start hover:bg-surface-1 ${errors.role ? "border-danger-strong" : "border-none"}`}
-              className="rounded-md p-0 w-32"
-              input
-            >
-              {Object.keys(ROLE).map((item) => (
-                <CustomSelect.Option key={item} value={item as unknown as EUserPermissions}>
-                  {ROLE[item as unknown as keyof typeof ROLE]}
-                </CustomSelect.Option>
-              ))}
-            </CustomSelect>
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Get policy names for display
+  const memberPolicies = availablePolicies.filter((p) => memberPolicyIds.includes(p.id));
+  const policyNames = memberPolicies.map((p) => p.name).join(", ");
+
+  const handleTogglePolicy = async (policyId: string) => {
+    if (!canEdit || isUpdating) return;
+
+    const newPolicyIds = memberPolicyIds.includes(policyId)
+      ? memberPolicyIds.filter((id) => id !== policyId)
+      : [...memberPolicyIds, policyId];
+
+    try {
+      setIsUpdating(true);
+      await iamService.updateMemberPolicies(workspaceSlug.toString(), memberId, newPolicyIds);
+      setMemberPolicyIds(newPolicyIds);
+    } catch (error) {
+      console.error("Failed to update member policies:", error);
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: "Error!",
+        message: "Failed to update policies. Please try again.",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Owner has full access - show "Root account"
+  if (isOwner) {
+    return (
+      <div className="w-48 flex">
+        <span className="text-11 text-primary font-medium">Root account</span>
+      </div>
+    );
+  }
+
+  if (isSuspended) {
+    return (
+      <div className="w-48 flex">
+        <Pill variant={EPillVariant.DEFAULT} size={EPillSize.SM} className="border-none">
+          Suspended
+        </Pill>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="w-48 flex">
+        <span className="text-11 text-tertiary">Loading...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef} className="relative w-48">
+      <button
+        type="button"
+        onClick={() => canEdit && setIsOpen(!isOpen)}
+        className={`flex w-full items-center justify-between gap-1 text-left text-11 ${
+          canEdit ? "cursor-pointer hover:text-primary" : "cursor-default"
+        }`}
+        disabled={!canEdit}
+      >
+        <span className="truncate text-secondary">
+          {policyNames || <span className="text-tertiary">No policies</span>}
+        </span>
+        {canEdit && <ChevronDownIcon className={`h-3 w-3 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />}
+      </button>
+
+      {/* Dropdown with checkboxes */}
+      {isOpen && canEdit && (
+        <div className="absolute z-30 mt-1 w-56 rounded-md border-[0.5px] border-subtle-1 bg-surface-1 px-2 py-2.5 text-11 shadow-sm">
+          {availablePolicies.length === 0 ? (
+            <div className="px-1 py-1.5 text-11 text-tertiary">No policies available</div>
+          ) : (
+            <div className="max-h-48 overflow-y-auto space-y-1">
+              {availablePolicies.map((policy) => {
+                const isChecked = memberPolicyIds.includes(policy.id);
+                return (
+                  <button
+                    key={policy.id}
+                    type="button"
+                    onClick={() => handleTogglePolicy(policy.id)}
+                    disabled={isUpdating}
+                    className="flex w-full items-center gap-2 rounded-sm p-1.5 hover:bg-layer-transparent-hover disabled:opacity-50"
+                  >
+                    <div
+                      className={`grid h-3 w-3 flex-shrink-0 place-items-center border rounded-xs ${
+                        isChecked ? "border-accent-strong bg-accent-primary text-on-color" : "border-strong"
+                      }`}
+                    >
+                      {isChecked && <CheckIcon width={10} height={10} strokeWidth={3} />}
+                    </div>
+                    <span className="flex-grow truncate text-left text-secondary">{policy.name}</span>
+                    {policy.is_managed && <span className="text-tertiary">(Default)</span>}
+                  </button>
+                );
+              })}
+            </div>
           )}
-        />
+        </div>
       )}
-    </>
+    </div>
   );
 });

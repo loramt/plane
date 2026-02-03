@@ -27,6 +27,8 @@ from plane.app.views.iam import (
     UserPolicyViewSet,
     MyPoliciesEndpoint,
     ProjectGroupViewSet,
+    PoliciesForInvitationEndpoint,
+    MemberPoliciesEndpoint,
 )
 
 
@@ -120,5 +122,19 @@ urlpatterns = [
             "delete": "destroy"
         }),
         name="project-group-detail",
+    ),
+
+    # Policies for Invitation (used when inviting new users)
+    path(
+        "workspaces/<str:slug>/policies-for-invitation/",
+        PoliciesForInvitationEndpoint.as_view(),
+        name="policies-for-invitation",
+    ),
+
+    # Member Policies (get/update policies for a specific member)
+    path(
+        "workspaces/<str:slug>/members/<uuid:member_id>/policies/",
+        MemberPoliciesEndpoint.as_view(),
+        name="member-policies",
     ),
 ]

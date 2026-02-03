@@ -1469,7 +1469,7 @@ export default {
           full_name: "Full name",
           display_name: "Display name",
           email_address: "Email address",
-          account_type: "Account type",
+          policies: "Policies",
           authentication: "Authentication",
           joining_date: "Joining date",
         },
@@ -1479,6 +1479,10 @@ export default {
           button: "Send invitations",
           button_loading: "Sending invitations",
           placeholder: "name@company.com",
+          select_policies: "Select policies",
+          policies_label: "Assign policies",
+          policies_hint: "Select policies to assign to this user. Policies define what they can access.",
+          no_policies: "No policies available. Create policies in IAM settings first.",
           errors: {
             required: "We need an email address to invite them.",
             invalid: "Email is invalid",
@@ -1580,6 +1584,11 @@ export default {
           users: "Users & Policies",
         },
         policies: {
+          columns: {
+            name: "Name",
+            description: "Description",
+            users: "Users",
+          },
           name: "Policy name",
           name_placeholder: "e.g., Project Viewer",
           description: "Description",
@@ -1591,6 +1600,7 @@ export default {
             allow: "Allow",
             deny: "Deny",
             actions: "Actions",
+            all_actions: "All actions",
             select_actions: "Select actions...",
           },
           action_groups: {
@@ -1619,6 +1629,9 @@ export default {
           add_policy: "Add policy",
           select_policy: "Select policy...",
           assign: "Assign",
+          owner: "Owner",
+          full_access: "Full Access",
+          owner_description: "Workspace owner has unrestricted access to all resources",
         },
         toasts: {
           policy_created: {

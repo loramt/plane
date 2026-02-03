@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { observer } from "mobx-react";
-import { Pencil, Trash2, Shield } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 // plane imports
 import { useTranslation } from "@plane/i18n";
-import { Button } from "@plane/propel/button";
 import { EmptyStateCompact } from "@plane/propel/empty-state";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
+import { Table } from "@plane/ui";
 // services
 import { IAMService } from "@/services/iam.service";
 // types
@@ -78,6 +78,70 @@ export const IAMPoliciesList = observer(function IAMPoliciesList({
     }
   };
 
+  const columns = [
+    {
+      key: "name",
+      content: t("workspace_settings.settings.iam.policies.columns.name"),
+      thClassName: "text-left",
+      tdRender: (policy: IPolicy) => (
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{policy.name}</span>
+          {policy.is_managed && (
+            <span className="text-10 px-1.5 py-0.5 rounded bg-layer-2 text-tertiary">Default</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "description",
+      content: t("workspace_settings.settings.iam.policies.columns.description"),
+      thClassName: "text-left",
+      tdRender: (policy: IPolicy) => (
+        <div className="text-secondary truncate max-w-[300px]">
+          {policy.description || "-"}
+        </div>
+      ),
+    },
+    {
+      key: "users",
+      content: t("workspace_settings.settings.iam.policies.columns.users"),
+      thClassName: "text-left",
+      tdRender: (policy: IPolicy) => (
+        <div className="text-secondary">
+          {policy.user_count ?? 0}
+        </div>
+      ),
+    },
+    {
+      key: "actions",
+      content: "",
+      thClassName: "w-20",
+      tdRender: (policy: IPolicy) => (
+        <div className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            onClick={() => onEditPolicy(policy.id)}
+            className="p-1.5 rounded hover:bg-layer-2 transition-colors"
+            title={t("edit")}
+          >
+            <Pencil className="h-3.5 w-3.5 text-tertiary" />
+          </button>
+          {!policy.is_managed && (
+            <button
+              type="button"
+              onClick={() => handleDelete(policy.id)}
+              disabled={deletingId === policy.id}
+              className="p-1.5 rounded hover:bg-layer-2 transition-colors disabled:opacity-50"
+              title={t("delete")}
+            >
+              <Trash2 className="h-3.5 w-3.5 text-red-500" />
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-10">
@@ -109,49 +173,17 @@ export const IAMPoliciesList = observer(function IAMPoliciesList({
   }
 
   return (
-    <div className="space-y-3">
-      {policies.map((policy) => (
-        <div
-          key={policy.id}
-          className="flex items-center justify-between p-4 rounded-lg border border-subtle bg-surface-1 hover:bg-surface-2 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Shield className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-medium truncate">{policy.name}</h4>
-              {policy.description && (
-                <p className="text-xs text-tertiary truncate mt-0.5">{policy.description}</p>
-              )}
-              <div className="flex items-center gap-4 mt-1 text-xs text-tertiary">
-                <span>
-                  {policy.document?.statements?.length || 0} statement
-                  {(policy.document?.statements?.length || 0) !== 1 ? "s" : ""}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 ml-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onEditPolicy(policy.id)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDelete(policy.id)}
-              disabled={deletingId === policy.id}
-            >
-              <Trash2 className="h-4 w-4 text-red-500" />
-            </Button>
-          </div>
-        </div>
-      ))}
+    <div className="border-t border-subtle">
+      <Table<IPolicy>
+        columns={columns}
+        data={policies}
+        keyExtractor={(policy) => policy.id}
+        tHeadClassName="border-b border-subtle"
+        thClassName="text-left font-medium divide-x-0 text-placeholder"
+        tBodyClassName="divide-y-0"
+        tBodyTrClassName="divide-x-0 p-4 h-[40px] text-secondary"
+        tHeadTrClassName="divide-x-0"
+      />
     </div>
   );
 });

@@ -108,6 +108,7 @@ class PolicyDocumentSerializer(serializers.Serializer):
 class PolicySerializer(BaseSerializer):
     """Serializer for IAM Policies."""
     document = PolicyDocumentSerializer()
+    user_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Policy
@@ -118,11 +119,16 @@ class PolicySerializer(BaseSerializer):
             "workspace",
             "document",
             "is_managed",
+            "user_count",
             "created_at",
             "updated_at",
             "created_by",
         ]
         read_only_fields = ["workspace", "is_managed", "created_at", "updated_at", "created_by"]
+
+    def get_user_count(self, obj):
+        """Count users with this policy attached."""
+        return obj.user_attachments.count()
 
     def create(self, validated_data):
         """Create a new policy."""

@@ -61,6 +61,7 @@ export interface IPolicy {
   description?: string;
   document: IPolicyDocument;
   is_managed: boolean;
+  user_count?: number;
   workspace: string;
   created_at: string;
   updated_at: string;
@@ -159,4 +160,5 @@ export interface IMyPoliciesResponse {
   policies: IPolicy[];
   groups: IGroup[];
   actor: IActor;
+  is_owner: boolean;
 }
