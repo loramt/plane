@@ -86,3 +86,12 @@ from .device import Device, DeviceSession
 from .sticky import Sticky
 
 from .description import Description, DescriptionVersion
+
+from .iam import (
+    Group,
+    GroupMember,
+    Policy,
+    GroupPolicy,
+    UserPolicy,
+    ProjectGroup,
+)

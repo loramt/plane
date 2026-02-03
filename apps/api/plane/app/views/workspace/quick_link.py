@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from plane.db.models import WorkspaceUserLink, Workspace
 from plane.app.serializers import WorkspaceUserLinkSerializer
 from ..base import BaseViewSet
-from plane.app.permissions import allow_permission, ROLE
+from plane.app.permissions import iam_permission, ROLE
 
 
 class QuickLinkViewSet(BaseViewSet):
@@ -16,7 +16,7 @@ class QuickLinkViewSet(BaseViewSet):
     def get_serializer_class(self):
         return WorkspaceUserLinkSerializer
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="quicklink:create")
     def create(self, request, slug):
         workspace = Workspace.objects.get(slug=slug)
         serializer = WorkspaceUserLinkSerializer(data=request.data)
@@ -26,7 +26,7 @@ class QuickLinkViewSet(BaseViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="quicklink:update")
     def partial_update(self, request, slug, pk):
         quick_link = WorkspaceUserLink.objects.filter(pk=pk, workspace__slug=slug, owner=request.user).first()
 
@@ -38,7 +38,7 @@ class QuickLinkViewSet(BaseViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response({"detail": "Quick link not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="quicklink:read")
     def retrieve(self, request, slug, pk):
         try:
             quick_link = WorkspaceUserLink.objects.get(pk=pk, workspace__slug=slug, owner=request.user)
@@ -47,13 +47,13 @@ class QuickLinkViewSet(BaseViewSet):
         except WorkspaceUserLink.DoesNotExist:
             return Response({"error": "Quick link not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="quicklink:delete")
     def destroy(self, request, slug, pk):
         quick_link = WorkspaceUserLink.objects.get(pk=pk, workspace__slug=slug, owner=request.user)
         quick_link.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="quicklink:read")
     def list(self, request, slug):
         quick_links = WorkspaceUserLink.objects.filter(workspace__slug=slug, owner=request.user)
 

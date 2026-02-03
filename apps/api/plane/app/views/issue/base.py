@@ -28,7 +28,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 # Module imports
-from plane.app.permissions import ROLE, allow_permission
+from plane.app.permissions import ROLE, iam_permission
 from plane.app.serializers import (
     IssueCreateSerializer,
     IssueDetailSerializer,
@@ -77,7 +77,7 @@ class IssueListEndpoint(BaseAPIView):
     filter_backends = (ComplexFilterBackend,)
     filterset_class = IssueFilterSet
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    @iam_permission(action="issue:read")
     def get(self, request, slug, project_id):
         issue_ids = request.GET.get("issues", False)
 
@@ -245,7 +245,7 @@ class IssueViewSet(BaseViewSet):
         return issues
 
     @method_decorator(gzip_page)
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    @iam_permission(action="issue:read")
     def list(self, request, slug, project_id):
         extra_filters = {}
         if request.GET.get("updated_at__gt", None) is not None:
@@ -384,7 +384,7 @@ class IssueViewSet(BaseViewSet):
                 on_results=lambda issues: issue_on_results(group_by=group_by, issues=issues, sub_group_by=sub_group_by),
             )
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    @iam_permission(action="issue:create")
     def create(self, request, slug, project_id):
         project = Project.objects.get(pk=project_id)
 
@@ -472,7 +472,7 @@ class IssueViewSet(BaseViewSet):
             return Response(issue, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], creator=True, model=Issue)
+    @iam_permission(action="issue:read")
     def retrieve(self, request, slug, project_id, pk=None):
         project = Project.objects.get(pk=project_id, workspace__slug=slug)
 
@@ -607,7 +607,7 @@ class IssueViewSet(BaseViewSet):
         serializer = IssueDetailSerializer(issue, expand=self.expand)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER], creator=True, model=Issue)
+    @iam_permission(action="issue:update")
     def partial_update(self, request, slug, project_id, pk=None):
         queryset = self.get_queryset()
         queryset = self.apply_annotations(queryset)
@@ -696,7 +696,7 @@ class IssueViewSet(BaseViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @allow_permission([ROLE.ADMIN], creator=True, model=Issue)
+    @iam_permission(action="issue:delete")
     def destroy(self, request, slug, project_id, pk=None):
         issue = Issue.objects.get(workspace__slug=slug, project_id=project_id, pk=pk)
 
@@ -724,7 +724,7 @@ class IssueViewSet(BaseViewSet):
 
 
 class ProjectUserDisplayPropertyEndpoint(BaseAPIView):
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    @iam_permission(action="project:read")
     def patch(self, request, slug, project_id):
         try:
             issue_property = ProjectUserProperty.objects.get(
@@ -746,7 +746,7 @@ class ProjectUserDisplayPropertyEndpoint(BaseAPIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    @iam_permission(action="project:read")
     def get(self, request, slug, project_id):
         issue_property, _ = ProjectUserProperty.objects.get_or_create(user=request.user, project_id=project_id)
         serializer = ProjectUserPropertySerializer(issue_property)
@@ -754,7 +754,7 @@ class ProjectUserDisplayPropertyEndpoint(BaseAPIView):
 
 
 class BulkDeleteIssuesEndpoint(BaseAPIView):
-    @allow_permission([ROLE.ADMIN])
+    @iam_permission(action="issue:delete")
     def delete(self, request, slug, project_id):
         issue_ids = request.data.get("issue_ids", [])
 
@@ -781,7 +781,7 @@ class BulkDeleteIssuesEndpoint(BaseAPIView):
 
 
 class DeletedIssuesListViewSet(BaseAPIView):
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    @iam_permission(action="issue:read")
     def get(self, request, slug, project_id):
         filters = {}
         if request.GET.get("updated_at__gt", None) is not None:
@@ -844,7 +844,7 @@ class IssuePaginatedViewSet(BaseViewSet):
 
         return paginated_data
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    @iam_permission(action="issue:read")
     def list(self, request, slug, project_id):
         cursor = request.GET.get("cursor", None)
         is_description_required = request.GET.get("description", "false")
@@ -1007,7 +1007,7 @@ class IssueDetailEndpoint(BaseAPIView):
             )
         )
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    @iam_permission(action="issue:read")
     def get(self, request, slug, project_id):
         filters = issue_filters(request.query_params, "GET")
 
@@ -1106,7 +1106,7 @@ class IssueBulkUpdateDateEndpoint(BaseAPIView):
             return False
         return True
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    @iam_permission(action="issue:update")
     def post(self, request, slug, project_id):
         updates = request.data.get("updates", [])
 
@@ -1167,7 +1167,7 @@ class IssueBulkUpdateDateEndpoint(BaseAPIView):
 
 
 class IssueMetaEndpoint(BaseAPIView):
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="PROJECT")
+    @iam_permission(action="issue:read")
     def get(self, request, slug, project_id, issue_id):
         issue = Issue.issue_objects.only("sequence_id", "project__identifier").get(
             id=issue_id, project_id=project_id, workspace__slug=slug

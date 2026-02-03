@@ -7,7 +7,7 @@ from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from datetime import timedelta
 from plane.app.views.base import BaseAPIView
-from plane.app.permissions import ROLE, allow_permission
+from plane.app.permissions import ROLE, iam_permission
 from plane.db.models import (
     Project,
     Issue,
@@ -77,7 +77,7 @@ class ProjectAdvanceAnalyticsEndpoint(ProjectAdvanceAnalyticsBaseView):
             "completed_work_items": self.get_filtered_counts(base_queryset.filter(state__group="completed")),
         }
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    @iam_permission("analytics:read")
     def get(self, request: HttpRequest, slug: str, project_id: str) -> Response:
         self.initialize_workspace(slug, type="analytics")
 
@@ -158,7 +158,7 @@ class ProjectAdvanceAnalyticsStatsEndpoint(ProjectAdvanceAnalyticsBaseView):
             .order_by("display_name")
         )
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    @iam_permission("analytics:read")
     def get(self, request: HttpRequest, slug: str, project_id: str) -> Response:
         self.initialize_workspace(slug, type="chart")
         type = request.GET.get("type", "work-items")
@@ -310,7 +310,7 @@ class ProjectAdvanceAnalyticsChartEndpoint(ProjectAdvanceAnalyticsBaseView):
 
         return {"data": data, "schema": schema}
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    @iam_permission("analytics:read")
     def get(self, request: HttpRequest, slug: str, project_id: str) -> Response:
         self.initialize_workspace(slug, type="chart")
         type = request.GET.get("type", "projects")

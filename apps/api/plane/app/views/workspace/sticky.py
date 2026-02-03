@@ -4,7 +4,7 @@ from rest_framework import status
 
 # Module imports
 from plane.app.views.base import BaseViewSet
-from plane.app.permissions import ROLE, allow_permission
+from plane.app.permissions import ROLE, iam_permission
 from plane.db.models import Sticky, Workspace
 from plane.app.serializers import StickySerializer
 
@@ -24,7 +24,7 @@ class WorkspaceStickyViewSet(BaseViewSet):
             .distinct()
         )
 
-    @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="sticky:create")
     def create(self, request, slug):
         workspace = Workspace.objects.get(slug=slug)
         serializer = StickySerializer(data=request.data)
@@ -33,7 +33,7 @@ class WorkspaceStickyViewSet(BaseViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="sticky:read")
     def list(self, request, slug):
         query = request.query_params.get("query", False)
         stickies = self.get_queryset().order_by("-sort_order")
@@ -47,10 +47,10 @@ class WorkspaceStickyViewSet(BaseViewSet):
             default_per_page=20,
         )
 
-    @allow_permission(allowed_roles=[], creator=True, model=Sticky, level="WORKSPACE")
+    @iam_permission(action="sticky:update")
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
 
-    @allow_permission(allowed_roles=[], creator=True, model=Sticky, level="WORKSPACE")
+    @iam_permission(action="sticky:delete")
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)

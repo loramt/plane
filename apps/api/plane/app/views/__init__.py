@@ -234,3 +234,13 @@ from .notification.base import MarkAllReadNotificationViewSet
 from .user.base import AccountEndpoint, ProfileEndpoint, UserSessionEndpoint
 
 from .timezone.base import TimezoneEndpoint
+
+from .iam import (
+    GroupViewSet,
+    GroupMemberViewSet,
+    PolicyViewSet,
+    GroupPolicyViewSet,
+    UserPolicyViewSet,
+    MyPoliciesEndpoint,
+    ProjectGroupViewSet,
+)

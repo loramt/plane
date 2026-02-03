@@ -13,7 +13,7 @@ from rest_framework import status
 # Module imports
 from .. import BaseAPIView
 from plane.app.serializers import IssueActivitySerializer, IssueCommentSerializer
-from plane.app.permissions import ProjectEntityPermission, allow_permission, ROLE
+from plane.app.permissions import ProjectEntityPermission, ROLE, iam_permission
 from plane.db.models import IssueActivity, IssueComment, CommentReaction, IntakeIssue
 
 
@@ -22,7 +22,7 @@ class IssueActivityEndpoint(BaseAPIView):
     use_read_replica = True
 
     @method_decorator(gzip_page)
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    @iam_permission(action="issue:read")
     def get(self, request, slug, project_id, issue_id):
         filters = {}
         if request.GET.get("created_at__gt", None) is not None:

@@ -27,11 +27,11 @@ from plane.db.models import (
 
 from plane.utils.analytics_plot import build_graph_plot
 from plane.utils.issue_filters import issue_filters
-from plane.app.permissions import allow_permission, ROLE
+from plane.app.permissions import iam_permission, ROLE
 
 
 class AnalyticsEndpoint(BaseAPIView):
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
+    @iam_permission(action="analytics:read")
     def get(self, request, slug):
         x_axis = request.GET.get("x_axis", False)
         y_axis = request.GET.get("y_axis", False)
@@ -200,7 +200,7 @@ class AnalyticViewViewset(BaseViewSet):
 
 
 class SavedAnalyticEndpoint(BaseAPIView):
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
+    @iam_permission(action="analytics:read")
     def get(self, request, slug, analytic_id):
         analytic_view = AnalyticView.objects.get(pk=analytic_id, workspace__slug=slug)
 
@@ -226,7 +226,7 @@ class SavedAnalyticEndpoint(BaseAPIView):
 
 
 class ExportAnalyticsEndpoint(BaseAPIView):
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
+    @iam_permission(action="analytics:read")
     def post(self, request, slug):
         x_axis = request.data.get("x_axis", False)
         y_axis = request.data.get("y_axis", False)
@@ -272,7 +272,7 @@ class ExportAnalyticsEndpoint(BaseAPIView):
 
 
 class DefaultAnalyticsEndpoint(BaseAPIView):
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="analytics:read")
     def get(self, request, slug):
         filters = issue_filters(request.GET, "GET")
         base_issues = Issue.issue_objects.filter(workspace__slug=slug, **filters)
@@ -412,7 +412,7 @@ class DefaultAnalyticsEndpoint(BaseAPIView):
 
 
 class ProjectStatsEndpoint(BaseAPIView):
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="analytics:read")
     def get(self, request, slug):
         fields = request.GET.get("fields", "").split(",")
         project_ids = request.GET.get("project_ids", "")

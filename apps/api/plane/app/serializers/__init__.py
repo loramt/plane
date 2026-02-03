@@ -129,3 +129,17 @@ from .draft import (
     DraftIssueSerializer,
     DraftIssueDetailSerializer,
 )
+
+from .iam import (
+    GroupSerializer,
+    GroupLiteSerializer,
+    GroupMemberSerializer,
+    PolicySerializer,
+    PolicyLiteSerializer,
+    PolicyDocumentSerializer,
+    GroupPolicySerializer,
+    UserPolicySerializer,
+    ProjectGroupSerializer,
+    ProjectGroupLiteSerializer,
+    MyPoliciesSerializer,
+)

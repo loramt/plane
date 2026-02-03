@@ -15,3 +15,15 @@ from .project import (
 )
 from .base import allow_permission, ROLE
 from .page import ProjectPagePermission
+
+# IAM Permission System
+from .iam import (
+    can,
+    can_access_project,
+    can_access_resource,
+    iam_permission,
+    can_read,
+    can_create,
+    can_update,
+    can_delete,
+)

@@ -2,7 +2,7 @@
 from ..base import BaseAPIView
 from plane.db.models.workspace import WorkspaceUserPreference
 from plane.app.serializers.workspace import WorkspaceUserPreferenceSerializer
-from plane.app.permissions import allow_permission, ROLE
+from plane.app.permissions import iam_permission, ROLE
 from plane.db.models import Workspace
 
 
@@ -18,7 +18,7 @@ class WorkspaceUserPreferenceViewSet(BaseAPIView):
     def get_serializer_class(self):
         return WorkspaceUserPreferenceSerializer
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="userpreference:read")
     def get(self, request, slug):
         workspace = Workspace.objects.get(slug=slug)
 
@@ -74,7 +74,7 @@ class WorkspaceUserPreferenceViewSet(BaseAPIView):
             status=status.HTTP_200_OK,
         )
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="userpreference:update")
     def patch(self, request, slug):
         for data in request.data:
             key = data.pop("key", None)

@@ -28,6 +28,7 @@
     "@intercom/messenger-js-sdk": "^0.0.12",
     "@plane/constants": "workspace:*",
     "@plane/editor": "workspace:*",
+    "@plane/permissions": "workspace:*",
     "@plane/hooks": "workspace:*",
     "@plane/i18n": "workspace:*",
     "@plane/propel": "workspace:*",

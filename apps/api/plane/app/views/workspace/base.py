@@ -38,7 +38,7 @@ from plane.db.models import (
     WorkspaceTheme,
     Profile,
 )
-from plane.app.permissions import ROLE, allow_permission
+from plane.app.permissions import ROLE, iam_permission
 from plane.utils.constants import RESTRICTED_WORKSPACE_SLUGS
 from plane.license.utils.instance_value import get_configuration_value
 from plane.bgtasks.workspace_seed_task import workspace_seed
@@ -158,11 +158,11 @@ class WorkSpaceViewSet(BaseViewSet):
                     status=status.HTTP_409_CONFLICT,
                 )
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="workspace:read")
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-    @allow_permission([ROLE.ADMIN], level="WORKSPACE")
+    @iam_permission(action="workspace:update")
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
 
@@ -173,7 +173,7 @@ class WorkSpaceViewSet(BaseViewSet):
         Profile.objects.filter(last_workspace_id=id).update(last_workspace_id=None)
         return
 
-    @allow_permission([ROLE.ADMIN], level="WORKSPACE")
+    @iam_permission(action="workspace:delete")
     def destroy(self, request, *args, **kwargs):
         # Get the workspace
         workspace = self.get_object()

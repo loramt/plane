@@ -1570,6 +1570,87 @@ export default {
           },
         },
       },
+      iam: {
+        title: "IAM",
+        heading: "Identity & Access Management",
+        description: "Manage access policies and assign them to workspace users.",
+        add_policy: "New Policy",
+        tabs: {
+          policies: "Policies",
+          users: "Users & Policies",
+        },
+        policies: {
+          name: "Policy name",
+          name_placeholder: "e.g., Project Viewer",
+          description: "Description",
+          description_placeholder: "Describe what this policy allows...",
+          statements: "Statements",
+          add_statement: "Add Statement",
+          statement: {
+            effect: "Effect",
+            allow: "Allow",
+            deny: "Deny",
+            actions: "Actions",
+            select_actions: "Select actions...",
+          },
+          action_groups: {
+            project: "Project",
+            issue: "Issue",
+            page: "Page",
+            cycle: "Cycle",
+            module: "Module",
+          },
+          save: "Save Policy",
+          saving: "Saving...",
+          cancel: "Cancel",
+          edit: "Edit",
+          delete: "Delete",
+          delete_confirm: {
+            title: "Delete Policy",
+            message: "Are you sure you want to delete this policy? This action cannot be undone.",
+            confirm: "Delete",
+            cancel: "Cancel",
+          },
+        },
+        users: {
+          no_users: "No users",
+          no_users_description: "There are no users in the workspace.",
+          no_policy_assigned: "No policy assigned",
+          add_policy: "Add policy",
+          select_policy: "Select policy...",
+          assign: "Assign",
+        },
+        toasts: {
+          policy_created: {
+            title: "Success",
+            message: "Policy created successfully",
+          },
+          policy_updated: {
+            title: "Success",
+            message: "Policy updated successfully",
+          },
+          policy_deleted: {
+            title: "Success",
+            message: "Policy deleted successfully",
+          },
+          policy_assigned: {
+            title: "Success",
+            message: "Policy assigned to user",
+          },
+          policy_removed: {
+            title: "Success",
+            message: "Policy removed from user",
+          },
+          error: {
+            title: "Error",
+            message: "An error occurred. Please try again.",
+          },
+          load_error: {
+            title: "Error",
+            message: "Failed to load data",
+          },
+        },
+      },
       api_tokens: {
         title: "Personal Access Tokens",
         add_token: "Add personal access token",
@@ -1601,6 +1682,11 @@ export default {
       webhooks: {
         title: "No webhooks added",
         description: "Create webhooks to receive real-time updates and automate actions.",
+      },
+      iam: {
+        title: "No policies created",
+        description: "Create policies to control access to workspace resources.",
+        cta_primary: "Create policy",
       },
       exports: {
         title: "No exports yet",

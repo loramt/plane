@@ -16,7 +16,7 @@ from rest_framework.response import Response
 
 # Module imports
 from ..base import BaseViewSet
-from plane.app.permissions import allow_permission, ROLE
+from plane.app.permissions import iam_permission, ROLE
 from plane.db.models import (
     Intake,
     IntakeIssue,
@@ -65,16 +65,16 @@ class IntakeViewSet(BaseViewSet):
             .select_related("workspace", "project")
         )
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    @iam_permission("intake:read")
     def list(self, request, slug, project_id):
         intake = self.get_queryset().first()
         return Response(IntakeSerializer(intake).data, status=status.HTTP_200_OK)
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    @iam_permission("intake:create")
     def perform_create(self, serializer):
         serializer.save(project_id=self.kwargs.get("project_id"))
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    @iam_permission("intake:delete")
     def destroy(self, request, slug, project_id, pk):
         intake = Intake.objects.filter(workspace__slug=slug, project_id=project_id, pk=pk).first()
         # Handle default intake delete
@@ -169,7 +169,7 @@ class IntakeIssueViewSet(BaseViewSet):
             )
         ).distinct()
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    @iam_permission("intake:read")
     def list(self, request, slug, project_id):
         intake = Intake.objects.filter(workspace__slug=slug, project_id=project_id).first()
         if not intake:
@@ -214,7 +214,7 @@ class IntakeIssueViewSet(BaseViewSet):
             on_results=lambda intake_issues: IntakeIssueSerializer(intake_issues, many=True).data,
         )
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    @iam_permission("intake:create")
     def create(self, request, slug, project_id):
         if not request.data.get("issue", {}).get("name", False):
             return Response({"error": "Name is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -320,7 +320,7 @@ class IntakeIssueViewSet(BaseViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @allow_permission(allowed_roles=[ROLE.ADMIN], creator=True, model=Issue)
+    @iam_permission(action="intake:update")
     def partial_update(self, request, slug, project_id, pk):
         skip_activity = request.data.pop("skip_activity", False)
         is_description_update = request.data.get("description_html") is not None
@@ -491,7 +491,7 @@ class IntakeIssueViewSet(BaseViewSet):
         serializer = IntakeIssueDetailSerializer(intake_issue).data
         return Response(serializer, status=status.HTTP_200_OK)
 
-    @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], creator=True, model=Issue)
+    @iam_permission(action="intake:read")
     def retrieve(self, request, slug, project_id, pk):
         intake_id = Intake.objects.filter(workspace__slug=slug, project_id=project_id).first()
         project = Project.objects.get(pk=project_id)
@@ -538,7 +538,7 @@ class IntakeIssueViewSet(BaseViewSet):
         issue = IntakeIssueDetailSerializer(intake_issue).data
         return Response(issue, status=status.HTTP_200_OK)
 
-    @allow_permission(allowed_roles=[ROLE.ADMIN], creator=True, model=Issue)
+    @iam_permission(action="intake:delete")
     def destroy(self, request, slug, project_id, pk):
         intake_id = Intake.objects.filter(workspace__slug=slug, project_id=project_id).first()
         intake_issue = IntakeIssue.objects.get(
@@ -567,7 +567,7 @@ class IntakeWorkItemDescriptionVersionEndpoint(BaseAPIView):
 
         return paginated_data
 
-    @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    @iam_permission("intake:read")
     def get(self, request, slug, project_id, work_item_id, pk=None):
         project = Project.objects.get(pk=project_id)
         issue = Issue.objects.get(workspace__slug=slug, project_id=project_id, pk=work_item_id)

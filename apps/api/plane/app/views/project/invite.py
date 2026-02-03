@@ -16,7 +16,7 @@ from rest_framework.permissions import AllowAny
 # Module imports
 from .base import BaseViewSet, BaseAPIView
 from plane.app.serializers import ProjectMemberInviteSerializer
-from plane.app.permissions import allow_permission, ROLE
+from plane.app.permissions import iam_permission, ROLE
 from plane.db.models import (
     ProjectMember,
     Workspace,
@@ -46,7 +46,7 @@ class ProjectInvitationsViewset(BaseViewSet):
             .select_related("workspace", "workspace__owner")
         )
 
-    @allow_permission([ROLE.ADMIN])
+    @iam_permission(action="invite:create")
     def create(self, request, slug, project_id):
         emails = request.data.get("emails", [])
 
@@ -121,7 +121,7 @@ class UserProjectInvitationsViewset(BaseViewSet):
             .select_related("workspace", "workspace__owner", "project")
         )
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
+    @iam_permission(action="invite:create")
     def create(self, request, slug):
         project_ids = request.data.get("project_ids", [])
 

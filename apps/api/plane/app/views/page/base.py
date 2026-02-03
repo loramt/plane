@@ -26,7 +26,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 # Module imports
-from plane.app.permissions import allow_permission, ROLE
+from plane.app.permissions import iam_permission, ROLE
 from plane.app.serializers import (
     PageSerializer,
     PageDetailSerializer,
@@ -468,7 +468,7 @@ class PageViewSet(BaseViewSet):
 class PageFavoriteViewSet(BaseViewSet):
     model = UserFavorite
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    @iam_permission("page:create")
     def create(self, request, slug, project_id, page_id):
         _ = UserFavorite.objects.create(
             project_id=project_id,
@@ -478,7 +478,7 @@ class PageFavoriteViewSet(BaseViewSet):
         )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    @iam_permission("page:delete")
     def destroy(self, request, slug, project_id, page_id):
         page_favorite = UserFavorite.objects.get(
             project=project_id,

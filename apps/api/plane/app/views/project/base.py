@@ -12,7 +12,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 # Module imports
-from plane.app.permissions import ROLE, ProjectMemberPermission, allow_permission
+from plane.app.permissions import ROLE, ProjectMemberPermission, iam_permission
 from plane.app.serializers import (
     DeployBoardSerializer,
     ProjectListSerializer,
@@ -94,7 +94,7 @@ class ProjectViewSet(BaseViewSet):
             .distinct()
         )
 
-    @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="project:read")
     def list_detail(self, request, slug):
         fields = [field for field in request.GET.get("fields", "").split(",") if field]
         projects = self.get_queryset().order_by("sort_order", "name")
@@ -134,7 +134,7 @@ class ProjectViewSet(BaseViewSet):
         projects = ProjectListSerializer(projects, many=True, fields=fields if fields else None).data
         return Response(projects, status=status.HTTP_200_OK)
 
-    @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="project:read")
     def list(self, request, slug):
         sort_order = ProjectMember.objects.filter(
             member=self.request.user,
@@ -205,7 +205,7 @@ class ProjectViewSet(BaseViewSet):
             )
         return Response(projects, status=status.HTTP_200_OK)
 
-    @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
+    @iam_permission(action="project:read")
     def retrieve(self, request, slug, pk):
         project = self.get_queryset().filter(archived_at__isnull=True).filter(pk=pk).first()
 
@@ -237,7 +237,7 @@ class ProjectViewSet(BaseViewSet):
         serializer = ProjectListSerializer(project)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
+    @iam_permission(action="project:create")
     def create(self, request, slug):
         workspace = Workspace.objects.get(slug=slug)
 
@@ -408,7 +408,7 @@ class ProjectViewSet(BaseViewSet):
 
 
 class ProjectArchiveUnarchiveEndpoint(BaseAPIView):
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    @iam_permission(action="project:update")
     def post(self, request, slug, project_id):
         project = Project.objects.get(pk=project_id, workspace__slug=slug)
         project.archived_at = timezone.now()
@@ -416,7 +416,7 @@ class ProjectArchiveUnarchiveEndpoint(BaseAPIView):
         UserFavorite.objects.filter(workspace__slug=slug, project=project_id).delete()
         return Response({"archived_at": str(project.archived_at)}, status=status.HTTP_200_OK)
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    @iam_permission(action="project:update")
     def delete(self, request, slug, project_id):
         project = Project.objects.get(pk=project_id, workspace__slug=slug)
         project.archived_at = None
@@ -425,7 +425,7 @@ class ProjectArchiveUnarchiveEndpoint(BaseAPIView):
 
 
 class ProjectIdentifierEndpoint(BaseAPIView):
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
+    @iam_permission(action="project:read")
     def get(self, request, slug):
         name = request.GET.get("name", "").strip().upper()
 
@@ -436,7 +436,7 @@ class ProjectIdentifierEndpoint(BaseAPIView):
 
         return Response({"exists": len(exists), "identifiers": exists}, status=status.HTTP_200_OK)
 
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
+    @iam_permission(action="project:delete")
     def delete(self, request, slug):
         name = request.data.get("name", "").strip().upper()
 

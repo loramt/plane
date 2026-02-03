@@ -15,7 +15,7 @@ from plane.app.serializers import (
     IssueVersionDetailSerializer,
     IssueDescriptionVersionDetailSerializer,
 )
-from plane.app.permissions import allow_permission, ROLE
+from plane.app.permissions import ROLE, iam_permission
 from plane.utils.global_paginator import paginate
 from plane.utils.timezone_converter import user_timezone_converter
 
@@ -29,7 +29,7 @@ class IssueVersionEndpoint(BaseAPIView):
 
         return paginated_data
 
-    @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    @iam_permission(action="issue:read")
     def get(self, request, slug, project_id, issue_id, pk=None):
         if pk:
             issue_version = IssueVersion.objects.get(
@@ -79,7 +79,7 @@ class WorkItemDescriptionVersionEndpoint(BaseAPIView):
 
         return paginated_data
 
-    @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    @iam_permission(action="issue:read")
     def get(self, request, slug, project_id, work_item_id, pk=None):
         project = Project.objects.get(pk=project_id)
         issue = Issue.objects.get(workspace__slug=slug, project_id=project_id, pk=work_item_id)

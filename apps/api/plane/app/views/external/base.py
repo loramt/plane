@@ -10,7 +10,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 # Module import
-from plane.app.permissions import ROLE, allow_permission
+from plane.app.permissions import ROLE, iam_permission
 from plane.app.serializers import ProjectLiteSerializer, WorkspaceLiteSerializer
 from plane.db.models import Project, Workspace
 from plane.license.utils.instance_value import get_configuration_value
@@ -142,7 +142,7 @@ def get_llm_response(task, prompt, api_key: str, model: str, provider: str) -> T
 
 
 class GPTIntegrationEndpoint(BaseAPIView):
-    @allow_permission([ROLE.ADMIN, ROLE.MEMBER])
+    @iam_permission("external:read")
     def post(self, request, slug, project_id):
         api_key, model, provider = get_llm_config()
 
@@ -178,7 +178,7 @@ class GPTIntegrationEndpoint(BaseAPIView):
 
 
 class WorkspaceGPTIntegrationEndpoint(BaseAPIView):
-    @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER], level="WORKSPACE")
+    @iam_permission(action="external:read")
     def post(self, request, slug):
         api_key, model, provider = get_llm_config()
 
