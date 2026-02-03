@@ -55,18 +55,15 @@ class PolicyDocument:
 
     Example:
     {
-        "version": "2024-01-01",
         "statements": [...]
     }
     """
-    version: str
     statements: List[Statement]
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "PolicyDocument":
         """Create PolicyDocument from dictionary."""
         return cls(
-            version=data.get("version", "2024-01-01"),
             statements=[
                 Statement.from_dict(s) for s in data.get("statements", [])
             ]

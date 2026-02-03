@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { observer } from "mobx-react";
 import { Controller, useForm } from "react-hook-form";
 import { Plus, Trash2, Code, Settings } from "lucide-react";
+import CodeMirror from "@uiw/react-codemirror";
+import { json } from "@codemirror/lang-json";
 // plane imports
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
@@ -30,6 +32,9 @@ const AVAILABLE_ACTIONS = [
   { group: "comment", actions: ["comment:read", "comment:create", "comment:update", "comment:delete"] },
   { group: "attachment", actions: ["attachment:read", "attachment:create", "attachment:delete"] },
 ];
+
+// All actions flattened
+const ALL_ACTIONS_LIST = AVAILABLE_ACTIONS.flatMap((g) => g.actions);
 
 type Props = {
   isOpen: boolean;
@@ -58,7 +63,7 @@ export const PolicyModal = observer(function PolicyModal({
   policyId,
 }: Props) {
   const [statements, setStatements] = useState<StatementForm[]>([
-    { sid: "Statement1", effect: "allow", actions: [] },
+    { sid: "Statement1", effect: "allow", actions: ["*"] },
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -73,6 +78,7 @@ export const PolicyModal = observer(function PolicyModal({
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
@@ -81,9 +87,10 @@ export const PolicyModal = observer(function PolicyModal({
     },
   });
 
+  const nameValue = watch("name");
+
   // Generate JSON from current form state
   const policyDocument = useMemo(() => ({
-    version: "2024-01-01",
     statements: statements.map((s) => ({
       sid: s.sid,
       effect: s.effect,
@@ -136,7 +143,7 @@ export const PolicyModal = observer(function PolicyModal({
     } else if (isOpen) {
       // Reset form for new policy
       reset({ name: "", description: "" });
-      setStatements([{ sid: "Statement1", effect: "allow", actions: [] }]);
+      setStatements([{ sid: "Statement1", effect: "allow", actions: ["*"] }]);
       setViewMode("gui");
       setJsonError(null);
     }
@@ -167,7 +174,7 @@ export const PolicyModal = observer(function PolicyModal({
   const handleAddStatement = () => {
     setStatements((prev) => [
       ...prev,
-      { sid: `Statement${prev.length + 1}`, effect: "allow", actions: [] },
+      { sid: `Statement${prev.length + 1}`, effect: "allow", actions: ["*"] },
     ]);
   };
 
@@ -212,6 +219,27 @@ export const PolicyModal = observer(function PolicyModal({
         }
       })
     );
+  };
+
+  const handleToggleAll = (statementIndex: number) => {
+    setStatements((prev) =>
+      prev.map((s, i) => {
+        if (i !== statementIndex) return s;
+        // If currently "all" (*), switch to empty; otherwise switch to "*"
+        const isAll = s.actions.includes("*");
+        return { ...s, actions: isAll ? [] : ["*"] };
+      })
+    );
+  };
+
+  // Helper to check if a statement has all actions (either "*" or all individual actions)
+  const isAllActions = (actions: string[]) => {
+    return actions.includes("*") || ALL_ACTIONS_LIST.every((a) => actions.includes(a));
+  };
+
+  // Helper to check if action is selected (handles "*" wildcard)
+  const isActionSelected = (actions: string[], action: string) => {
+    return actions.includes("*") || actions.includes(action);
   };
 
   const onSubmit = async (formData: FormData) => {
@@ -403,7 +431,7 @@ export const PolicyModal = observer(function PolicyModal({
                             </h4>
                             <CustomSelect
                               value={statement.effect}
-                              onChange={(val) => handleStatementChange(idx, "effect", val)}
+                              onChange={(val: TEffect) => handleStatementChange(idx, "effect", val)}
                               label={
                                 <span className={`px-2 py-1 rounded text-sm font-medium ${
                                   statement.effect === "allow"
@@ -442,12 +470,27 @@ export const PolicyModal = observer(function PolicyModal({
                         <h4 className="text-body-xs-regular text-tertiary">
                           {t("workspace_settings.settings.iam.policies.statement.actions")}
                         </h4>
-                        {AVAILABLE_ACTIONS.map((group) => {
-                          const allSelected = group.actions.every((a) =>
-                            statement.actions.includes(a)
+
+                        {/* All checkbox */}
+                        <div className="flex items-center gap-2 pb-2 border-b border-subtle">
+                          <input
+                            type="checkbox"
+                            checked={isAllActions(statement.actions)}
+                            onChange={() => handleToggleAll(idx)}
+                            className="rounded border-subtle"
+                          />
+                          <span className="text-sm font-medium">
+                            {t("workspace_settings.settings.iam.policies.statement.all_actions")}
+                          </span>
+                        </div>
+
+                        {/* Individual action groups - only show when not "all" */}
+                        {!statement.actions.includes("*") && AVAILABLE_ACTIONS.map((group) => {
+                          const allGroupSelected = group.actions.every((a) =>
+                            isActionSelected(statement.actions, a)
                           );
-                          const someSelected = group.actions.some((a) =>
-                            statement.actions.includes(a)
+                          const someGroupSelected = group.actions.some((a) =>
+                            isActionSelected(statement.actions, a)
                           );
 
                           return (
@@ -455,9 +498,9 @@ export const PolicyModal = observer(function PolicyModal({
                               <div className="flex items-center gap-2 mb-1.5">
                                 <input
                                   type="checkbox"
-                                  checked={allSelected}
+                                  checked={allGroupSelected}
                                   ref={(el) => {
-                                    if (el) el.indeterminate = someSelected && !allSelected;
+                                    if (el) el.indeterminate = someGroupSelected && !allGroupSelected;
                                   }}
                                   onChange={() =>
                                     handleSelectAllInGroup(idx, group.actions)
@@ -470,17 +513,17 @@ export const PolicyModal = observer(function PolicyModal({
                               </div>
                               <div className="flex flex-wrap gap-2 ml-5">
                                 {group.actions.map((action) => {
-                                  const isSelected = statement.actions.includes(action);
+                                  const isSelected = isActionSelected(statement.actions, action);
                                   const actionName = action.split(":")[1];
                                   return (
                                     <button
                                       key={action}
                                       type="button"
                                       onClick={() => handleActionToggle(idx, action)}
-                                      className={`px-2 py-0.5 rounded text-xs transition-colors ${
+                                      className={`px-2.5 py-1 rounded text-xs font-medium transition-colors border ${
                                         isSelected
-                                          ? "bg-primary text-white"
-                                          : "bg-layer-2 text-tertiary hover:bg-layer-3"
+                                          ? "bg-success-subtle text-success-primary border-success-subtle"
+                                          : "bg-danger-subtle text-danger-primary border-danger-subtle"
                                       }`}
                                     >
                                       {actionName}
@@ -502,12 +545,21 @@ export const PolicyModal = observer(function PolicyModal({
             {viewMode === "json" && (
               <div className="flex flex-col gap-1">
                 <h4 className="text-body-xs-regular text-tertiary">Policy Document (JSON)</h4>
-                <div className={`relative rounded-md border ${jsonError ? "border-red-500" : "border-subtle"} bg-layer-1`}>
-                  <textarea
+                <div className={`relative rounded-md border ${jsonError ? "border-red-500" : "border-subtle"} overflow-hidden`}>
+                  <CodeMirror
                     value={jsonText}
-                    onChange={(e) => handleJsonChange(e.target.value)}
-                    className="w-full h-96 px-4 py-3 font-mono text-sm bg-transparent focus:outline-none resize-none"
-                    spellCheck={false}
+                    height="384px"
+                    extensions={[json()]}
+                    onChange={(value) => handleJsonChange(value)}
+                    theme="dark"
+                    basicSetup={{
+                      lineNumbers: true,
+                      foldGutter: true,
+                      highlightActiveLineGutter: true,
+                      highlightActiveLine: true,
+                      bracketMatching: true,
+                      autocompletion: true,
+                    }}
                   />
                 </div>
                 {jsonError && (
@@ -529,7 +581,7 @@ export const PolicyModal = observer(function PolicyModal({
           size="lg"
           onClick={handleSubmit(onSubmit)}
           loading={isLoading}
-          disabled={isFetching || (viewMode === "json" && !!jsonError)}
+          disabled={isFetching || !nameValue?.trim() || (viewMode === "json" && !!jsonError)}
         >
           {isLoading ? t("workspace_settings.settings.iam.policies.saving") : t("workspace_settings.settings.iam.policies.save")}
         </Button>

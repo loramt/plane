@@ -13,7 +13,6 @@ from .base import BaseModel
 def get_default_policy_document():
     """Default empty policy document."""
     return {
-        "version": "2024-01-01",
         "statements": []
     }
 

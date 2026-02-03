@@ -242,6 +242,8 @@ class WorkspaceMemberInvite(BaseModel):
     message = models.TextField(null=True)
     responded_at = models.DateTimeField(null=True)
     role = models.PositiveSmallIntegerField(choices=ROLE_CHOICES, default=5)
+    # IAM policies to assign when user accepts the invitation
+    policy_ids = models.JSONField(default=list, blank=True)
 
     class Meta:
         unique_together = ["email", "workspace", "deleted_at"]

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { observer } from "mobx-react";
-import { Plus, X, Shield, User } from "lucide-react";
+import { Plus, X, Shield, User, Crown } from "lucide-react";
 // plane imports
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
@@ -11,6 +11,7 @@ import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import { IAMService } from "@/services/iam.service";
 // hooks
 import { useMember } from "@/hooks/store/use-member";
+import { useWorkspace } from "@/hooks/store/use-workspace";
 // types
 import type { IPolicy } from "@plane/permissions";
 
@@ -26,6 +27,7 @@ type UserWithPolicies = {
   email: string;
   avatar?: string;
   policies: IPolicy[];
+  isOwner?: boolean;
 };
 
 export const IAMUserPolicies = observer(function IAMUserPolicies({ workspaceSlug }: Props) {
@@ -41,6 +43,10 @@ export const IAMUserPolicies = observer(function IAMUserPolicies({ workspaceSlug
   const {
     workspace: { workspaceMemberIds, getWorkspaceMemberDetails },
   } = useMember();
+  const { currentWorkspace } = useWorkspace();
+
+  // Get workspace owner ID
+  const workspaceOwnerId = currentWorkspace?.owner?.id;
 
   // Fetch data on mount
   useEffect(() => {
@@ -65,10 +71,11 @@ export const IAMUserPolicies = observer(function IAMUserPolicies({ workspaceSlug
           if (member?.member) {
             usersMap.set(member.member.id, {
               id: member.member.id,
-              display_name: member.member.display_name || member.member.email,
-              email: member.member.email,
-              avatar: member.member.avatar,
+              display_name: member.member.display_name || member.member.email || "",
+              email: member.member.email || "",
+              avatar: (member.member as { avatar?: string }).avatar,
               policies: [],
+              isOwner: member.member.id === workspaceOwnerId,
             });
           }
         });
@@ -96,7 +103,7 @@ export const IAMUserPolicies = observer(function IAMUserPolicies({ workspaceSlug
     };
 
     fetchData();
-  }, [workspaceSlug, workspaceMemberIds, getWorkspaceMemberDetails]);
+  }, [workspaceSlug, workspaceMemberIds, getWorkspaceMemberDetails, workspaceOwnerId]);
 
   const handleAssignPolicy = async (userId: string) => {
     if (!selectedPolicyId) return;
@@ -189,12 +196,21 @@ export const IAMUserPolicies = observer(function IAMUserPolicies({ workspaceSlug
     );
   }
 
+  // Sort users: owner first, then alphabetically
+  const sortedUsers = [...usersWithPolicies].sort((a, b) => {
+    if (a.isOwner) return -1;
+    if (b.isOwner) return 1;
+    return a.display_name.localeCompare(b.display_name);
+  });
+
   return (
     <div className="space-y-3">
-      {usersWithPolicies.map((user) => (
+      {sortedUsers.map((user) => (
         <div
           key={user.id}
-          className="p-4 rounded-lg border border-subtle bg-surface-1"
+          className={`p-4 rounded-lg border bg-surface-1 ${
+            user.isOwner ? "border-amber-500/50" : "border-subtle"
+          }`}
         >
           {/* User info */}
           <div className="flex items-center gap-3 mb-3">
@@ -205,87 +221,112 @@ export const IAMUserPolicies = observer(function IAMUserPolicies({ workspaceSlug
                 className="h-10 w-10 rounded-full"
               />
             ) : (
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-medium">
+              <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                user.isOwner ? "bg-amber-500/10" : "bg-primary/10"
+              }`}>
+                <span className={`font-medium ${user.isOwner ? "text-amber-600" : "text-primary"}`}>
                   {user.display_name.charAt(0).toUpperCase()}
                 </span>
               </div>
             )}
-            <div>
-              <h4 className="text-sm font-medium">{user.display_name}</h4>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-medium">{user.display_name}</h4>
+                {user.isOwner && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 text-xs font-medium">
+                    <Crown className="h-3 w-3" />
+                    {t("workspace_settings.settings.iam.users.owner")}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-tertiary">{user.email}</p>
             </div>
           </div>
 
-          {/* Policies */}
-          <div className="flex flex-wrap items-center gap-2">
-            {user.policies.map((policy) => (
-              <span
-                key={policy.id}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs"
-              >
+          {/* Owner has full access - no policies needed */}
+          {user.isOwner ? (
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 text-xs">
                 <Shield className="h-3 w-3" />
-                {policy.name}
-                <button
-                  onClick={() => handleRemovePolicy(user.id, policy.id)}
-                  className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
-                >
-                  <X className="h-3 w-3" />
-                </button>
+                {t("workspace_settings.settings.iam.users.full_access")}
               </span>
-            ))}
+              <span className="text-xs text-tertiary">
+                {t("workspace_settings.settings.iam.users.owner_description")}
+              </span>
+            </div>
+          ) : (
+            <>
+              {/* Policies */}
+              <div className="flex flex-wrap items-center gap-2">
+                {user.policies.map((policy) => (
+                  <span
+                    key={policy.id}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs"
+                  >
+                    <Shield className="h-3 w-3" />
+                    {policy.name}
+                    <button
+                      onClick={() => handleRemovePolicy(user.id, policy.id)}
+                      className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
 
-            {/* Add policy button/dropdown */}
-            {assigningUserId === user.id ? (
-              <div className="flex items-center gap-2">
-                <select
-                  value={selectedPolicyId}
-                  onChange={(e) => setSelectedPolicyId(e.target.value)}
-                  className="text-sm border border-subtle rounded-md px-2 py-1 bg-surface-1"
-                >
-                  <option value="">{t("workspace_settings.settings.iam.users.select_policy")}</option>
-                  {getAvailablePolicies(user).map((policy) => (
-                    <option key={policy.id} value={policy.id}>
-                      {policy.name}
-                    </option>
-                  ))}
-                </select>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => handleAssignPolicy(user.id)}
-                  disabled={!selectedPolicyId}
-                >
-                  {t("workspace_settings.settings.iam.users.assign")}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setAssigningUserId(null);
-                    setSelectedPolicyId("");
-                  }}
-                >
-                  {t("workspace_settings.settings.iam.policies.cancel")}
-                </Button>
+                {/* Add policy button/dropdown */}
+                {assigningUserId === user.id ? (
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={selectedPolicyId}
+                      onChange={(e) => setSelectedPolicyId(e.target.value)}
+                      className="text-sm border border-subtle rounded-md px-2 py-1 bg-surface-1"
+                    >
+                      <option value="">{t("workspace_settings.settings.iam.users.select_policy")}</option>
+                      {getAvailablePolicies(user).map((policy) => (
+                        <option key={policy.id} value={policy.id}>
+                          {policy.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleAssignPolicy(user.id)}
+                      disabled={!selectedPolicyId}
+                    >
+                      {t("workspace_settings.settings.iam.users.assign")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setAssigningUserId(null);
+                        setSelectedPolicyId("");
+                      }}
+                    >
+                      {t("workspace_settings.settings.iam.policies.cancel")}
+                    </Button>
+                  </div>
+                ) : (
+                  getAvailablePolicies(user).length > 0 && (
+                    <button
+                      onClick={() => setAssigningUserId(user.id)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed border-subtle text-tertiary text-xs hover:border-primary hover:text-primary transition-colors"
+                    >
+                      <Plus className="h-3 w-3" />
+                      {t("workspace_settings.settings.iam.users.add_policy")}
+                    </button>
+                  )
+                )}
               </div>
-            ) : (
-              getAvailablePolicies(user).length > 0 && (
-                <button
-                  onClick={() => setAssigningUserId(user.id)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed border-subtle text-tertiary text-xs hover:border-primary hover:text-primary transition-colors"
-                >
-                  <Plus className="h-3 w-3" />
-                  {t("workspace_settings.settings.iam.users.add_policy")}
-                </button>
-              )
-            )}
-          </div>
 
-          {user.policies.length === 0 && assigningUserId !== user.id && (
-            <p className="text-xs text-tertiary mt-2">
-              {t("workspace_settings.settings.iam.users.no_policy_assigned")}
-            </p>
+              {user.policies.length === 0 && assigningUserId !== user.id && (
+                <p className="text-xs text-tertiary mt-2">
+                  {t("workspace_settings.settings.iam.users.no_policy_assigned")}
+                </p>
+              )}
+            </>
           )}
         </div>
       ))}

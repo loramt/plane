@@ -21,6 +21,7 @@ export interface IIAMStore {
   myPolicies: IPolicyDocument[];
   myGroups: IGroup[];
   actor: IActor | null;
+  isOwner: boolean;
   projectGroups: Record<string, IProjectGroup>;
   allGroups: Record<string, IGroup>;
   allPolicies: Record<string, IPolicy>;
@@ -55,6 +56,7 @@ export class IAMStore implements IIAMStore {
   myPolicies: IPolicyDocument[] = [];
   myGroups: IGroup[] = [];
   actor: IActor | null = null;
+  isOwner = false;
   projectGroups: Record<string, IProjectGroup> = {};
   allGroups: Record<string, IGroup> = {};
   allPolicies: Record<string, IPolicy> = {};
@@ -70,6 +72,7 @@ export class IAMStore implements IIAMStore {
       myPolicies: observable,
       myGroups: observable,
       actor: observable,
+      isOwner: observable,
       projectGroups: observable,
       allGroups: observable,
       allPolicies: observable,
@@ -145,6 +148,7 @@ export class IAMStore implements IIAMStore {
         this.myPolicies = response.policies.map((p) => p.document);
         this.myGroups = response.groups;
         this.actor = response.actor;
+        this.isOwner = response.is_owner ?? false;
         this.isLoading = false;
       });
     } catch (error) {
@@ -337,6 +341,7 @@ export class IAMStore implements IIAMStore {
       this.myPolicies = [];
       this.myGroups = [];
       this.actor = null;
+      this.isOwner = false;
       this.projectGroups = {};
       this.allGroups = {};
       this.allPolicies = {};

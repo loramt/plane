@@ -34,9 +34,9 @@ export function can(
   policies: IPolicyDocument[],
   actor: IActor
 ): boolean {
-  // If no policies, allow by default (backward compatibility)
+  // If no policies, deny by default (no explicit allow = no access)
   if (!policies || policies.length === 0) {
-    return true;
+    return false;
   }
 
   // Build context

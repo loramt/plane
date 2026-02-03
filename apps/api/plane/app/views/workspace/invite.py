@@ -23,11 +23,36 @@ from plane.app.serializers import (
 from plane.app.views.base import BaseAPIView
 from plane.bgtasks.event_tracking_task import track_event
 from plane.bgtasks.workspace_invitation_task import workspace_invitation
-from plane.db.models import User, Workspace, WorkspaceMember, WorkspaceMemberInvite
+from plane.db.models import User, Workspace, WorkspaceMember, WorkspaceMemberInvite, UserPolicy, Policy
 from plane.utils.cache import invalidate_cache, invalidate_cache_directly
 from plane.utils.host import base_host
 from plane.utils.analytics_events import USER_JOINED_WORKSPACE, USER_INVITED_TO_WORKSPACE
+from plane.app.permissions.iam.managed_policies import ensure_administrator_policy
 from .. import BaseViewSet
+
+
+def assign_policies_to_user(user, workspace, policy_ids):
+    """
+    Assigns policies to a user when they join a workspace.
+    """
+    if not policy_ids:
+        return
+
+    # Get valid policy IDs
+    valid_policies = Policy.objects.filter(
+        id__in=policy_ids,
+        workspace=workspace,
+        deleted_at__isnull=True
+    )
+
+    # Create UserPolicy entries
+    for policy in valid_policies:
+        UserPolicy.objects.get_or_create(
+            user=user,
+            policy=policy,
+            workspace=workspace,
+            defaults={"created_by": user}
+        )
 
 
 class WorkspaceInvitationsViewset(BaseViewSet):
@@ -85,6 +110,8 @@ class WorkspaceInvitationsViewset(BaseViewSet):
         for email in emails:
             try:
                 validate_email(email.get("email"))
+                # Get policy_ids from the request, default to empty list
+                policy_ids = email.get("policy_ids", [])
                 workspace_invitations.append(
                     WorkspaceMemberInvite(
                         email=email.get("email").strip().lower(),
@@ -95,6 +122,7 @@ class WorkspaceInvitationsViewset(BaseViewSet):
                             algorithm="HS256",
                         ),
                         role=email.get("role", 5),
+                        policy_ids=policy_ids,
                         created_by=request.user,
                     )
                 )
@@ -196,6 +224,14 @@ class WorkspaceJoinEndpoint(BaseAPIView):
                             role=workspace_invite.role,
                         )
 
+                    # Assign IAM policies from the invitation
+                    if workspace_invite.policy_ids:
+                        assign_policies_to_user(
+                            user,
+                            workspace_invite.workspace,
+                            workspace_invite.policy_ids
+                        )
+
                     # Set the user last_workspace_id to the accepted workspace
                     user.last_workspace_id = workspace_invite.workspace.id
                     user.save()
@@ -266,6 +302,14 @@ class UserWorkspaceInvitationsViewSet(BaseViewSet):
             WorkspaceMember.objects.filter(workspace_id=invitation.workspace_id, member=request.user).update(
                 is_active=True, role=invitation.role
             )
+
+            # Assign IAM policies from the invitation
+            if invitation.policy_ids:
+                assign_policies_to_user(
+                    request.user,
+                    invitation.workspace,
+                    invitation.policy_ids
+                )
 
             # Track event
             track_event.delay(

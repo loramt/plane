@@ -48,7 +48,6 @@ export interface IStatement {
  * A complete policy document
  */
 export interface IPolicyDocument {
-  version: string;
   statements: IStatement[];
 }
 

@@ -66,7 +66,6 @@ class GroupMemberSerializer(BaseSerializer):
 
 class PolicyDocumentSerializer(serializers.Serializer):
     """Serializer for policy document validation."""
-    version = serializers.CharField(default="2024-01-01")
     statements = serializers.ListField(child=serializers.DictField())
 
     def validate_statements(self, statements):

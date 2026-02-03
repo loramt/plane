@@ -123,6 +123,20 @@ export const ACTIONS = {
     ALL: "project_group:*",
   },
 
+  // IAM management actions (requires owner or explicit iam:manage permission)
+  IAM: {
+    MANAGE: "iam:manage",
+    READ: "iam:read",
+    ALL: "iam:*",
+  },
+
+  // Workspace settings actions
+  WORKSPACE: {
+    SETTINGS: "workspace:settings",
+    MANAGE: "workspace:manage",
+    ALL: "workspace:*",
+  },
+
   // Wildcard - all actions
   ALL: "*",
 } as const;
@@ -143,5 +157,7 @@ export type TAction =
   | (typeof ACTIONS.GROUP)[keyof typeof ACTIONS.GROUP]
   | (typeof ACTIONS.POLICY)[keyof typeof ACTIONS.POLICY]
   | (typeof ACTIONS.PROJECT_GROUP)[keyof typeof ACTIONS.PROJECT_GROUP]
+  | (typeof ACTIONS.IAM)[keyof typeof ACTIONS.IAM]
+  | (typeof ACTIONS.WORKSPACE)[keyof typeof ACTIONS.WORKSPACE]
   | typeof ACTIONS.ALL
   | string; // Allow custom actions

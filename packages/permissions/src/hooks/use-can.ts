@@ -22,6 +22,8 @@ export interface UseCanOptions {
   workspaceSlug?: string;
   /** Default project ID from route */
   projectId?: string;
+  /** If true, user is workspace owner (root account) and bypasses all checks */
+  isOwner?: boolean;
 }
 
 /**
@@ -94,7 +96,7 @@ export interface UseCanReturn {
  * }
  */
 export function useCan(options: UseCanOptions): UseCanReturn {
-  const { actor, policies, workspaceSlug, projectId } = options;
+  const { actor, policies, workspaceSlug, projectId, isOwner = false } = options;
 
   // Memoize default resource context
   const defaultResource = useMemo(
@@ -113,9 +115,14 @@ export function useCan(options: UseCanOptions): UseCanReturn {
         return false;
       }
 
-      // If no policies, allow (backward compatibility)
-      if (!policies || policies.length === 0) {
+      // Root account bypass - workspace owner has full access
+      if (isOwner) {
         return true;
+      }
+
+      // If no policies, deny (users must have explicit permissions)
+      if (!policies || policies.length === 0) {
+        return false;
       }
 
       // Merge resource with defaults
@@ -123,7 +130,7 @@ export function useCan(options: UseCanOptions): UseCanReturn {
 
       return canCore(action, fullResource, policies, actor);
     },
-    [actor, policies, defaultResource]
+    [actor, policies, defaultResource, isOwner]
   );
 
   // Check multiple permissions

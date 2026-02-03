@@ -243,4 +243,6 @@ from .iam import (
     UserPolicyViewSet,
     MyPoliciesEndpoint,
     ProjectGroupViewSet,
+    PoliciesForInvitationEndpoint,
+    MemberPoliciesEndpoint,
 )
